@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Віджимання</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: var(--tg-theme-secondary-bg-color, #f2f2f7);
+    --card: var(--tg-theme-section-bg-color, var(--tg-theme-bg-color, #fff));
+    --text: var(--tg-theme-text-color, #111);
+    --hint: var(--tg-theme-hint-color, #8e8e93);
+    --accent: var(--tg-theme-button-color, #2f80ed);
+    --accent-text: var(--tg-theme-button-text-color, #fff);
+    --sep: color-mix(in srgb, var(--hint) 25%, transparent);
+    --ok: #34c759; --bad: #ff453a; --warn: #ff9f0a;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; font: 15px/1.4 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+         background: var(--bg); color: var(--text); padding: 12px 12px 88px; }
+  h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+       color: var(--hint); margin: 18px 4px 8px; }
+  .card { background: var(--card); border-radius: 14px; padding: 14px; margin-bottom: 10px; }
+  .muted { color: var(--hint); }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .between { justify-content: space-between; }
+  .hidden { display: none !important; }
+
+  /* hero */
+  .hero { display: flex; align-items: center; gap: 16px; }
+  .ring { position: relative; width: 112px; height: 112px; flex: none; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring .val { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .ring .big { font-size: 28px; font-weight: 700; line-height: 1; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .chip { font-size: 13px; padding: 3px 8px; border-radius: 99px; background: var(--bg); }
+
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tile { background: var(--card); border-radius: 14px; padding: 12px 14px; }
+  .tile .v { font-size: 24px; font-weight: 700; }
+  .tile .l { font-size: 13px; color: var(--hint); }
+
+  .heat { display: grid; grid-template-rows: repeat(7, 1fr); grid-auto-flow: column; gap: 3px; }
+  .heat div { aspect-ratio: 1; border-radius: 3px; background: var(--bg); }
+  .legend { display: flex; gap: 3px; align-items: center; font-size: 12px; justify-content: flex-end; margin-top: 8px; }
+  .legend i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+  /* history */
+  .day-head { font-size: 13px; color: var(--hint); margin: 14px 4px 6px; display: flex; justify-content: space-between; }
+  .item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--sep); }
+  .item:nth-last-child(2) { border-bottom: 0; }
+  .item .ico { width: 28px; text-align: center; font-size: 18px; }
+  .item .t { flex: 1; }
+  .item .n { font-weight: 600; }
+  .editor { display: flex; gap: 6px; padding: 0 0 10px 38px; }
+
+  input, select { font: inherit; color: var(--text); background: var(--bg); border: 0; border-radius: 10px;
+                  padding: 10px 12px; width: 100%; outline: none; }
+  input:focus, select:focus { box-shadow: 0 0 0 2px var(--accent); }
+  button { font: inherit; border: 0; border-radius: 10px; padding: 10px 14px; cursor: pointer;
+           background: var(--accent); color: var(--accent-text); font-weight: 600; }
+  button.ghost { background: var(--bg); color: var(--text); }
+  button.danger { background: color-mix(in srgb, var(--bad) 15%, transparent); color: var(--bad); }
+  button.wide { width: 100%; padding: 14px; font-size: 16px; }
+  button:disabled { opacity: .5; }
+
+  .field { padding: 12px 0; border-bottom: 1px solid var(--sep); }
+  .field:last-child { border-bottom: 0; }
+  .field label { display: block; font-size: 13px; color: var(--hint); margin-bottom: 6px; }
+  .stepper { display: flex; gap: 8px; }
+  .stepper button { width: 48px; font-size: 20px; padding: 6px; }
+  .stepper input { text-align: center; font-size: 20px; font-weight: 700; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .days button { padding: 10px 0; background: var(--bg); color: var(--text); font-weight: 500; }
+  .days button.on { background: var(--accent); color: var(--accent-text); }
+  .switch { position: relative; width: 51px; height: 31px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch span { position: absolute; inset: 0; background: var(--sep); border-radius: 99px; transition: .2s; }
+  .switch span::after { content: ""; position: absolute; width: 27px; height: 27px; left: 2px; top: 2px;
+                        background: #fff; border-radius: 50%; transition: .2s; box-shadow: 0 1px 3px #0003; }
+  .switch input:checked + span { background: var(--ok); }
+  .switch input:checked + span::after { transform: translateX(20px); }
+  .preview { font-size: 14px; color: var(--hint); text-align: center; margin: 10px 0; }
+
+  nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; background: var(--card);
+        border-top: 1px solid var(--sep); padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); }
+  nav button { flex: 1; background: none; color: var(--hint); font-size: 12px; font-weight: 500; padding: 6px 0; }
+  nav button b { display: block; font-size: 20px; }
+  nav button.active { color: var(--accent); }
+
+  #toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); background: #000c; color: #fff;
+           padding: 10px 16px; border-radius: 12px; font-size: 14px; opacity: 0; transition: .25s; pointer-events: none; }
+  #toast.show { opacity: 1; }
+  .empty { text-align: center; color: var(--hint); padding: 40px 10px; }
+</style>
+</head>
+<body>
+
+<div id="noTg" class="empty hidden">Відкрий цей застосунок через бота в Telegram 🙂</div>
+
+<!-- ============ СТАТИСТИКА ============ -->
+<section id="tab-stats">
+  <div class="card hero">
+    <div class="ring">
+      <svg width="112" height="112" viewBox="0 0 112 112">
+        <circle cx="56" cy="56" r="48" fill="none" stroke="var(--bg)" stroke-width="12"/>
+        <circle id="ringArc" cx="56" cy="56" r="48" fill="none" stroke="var(--accent)" stroke-width="12"
+                stroke-linecap="round" stroke-dasharray="301.6" stroke-dashoffset="301.6"
+                style="transition: stroke-dashoffset .6s"/>
+      </svg>
+      <div class="val"><div class="big" id="todayDone">0</div><div class="muted" id="todayGoal">з 0</div></div>
+    </div>
+    <div>
+      <div style="font-weight:700;font-size:17px" id="todayMsg">Сьогодні</div>
+      <div class="muted" id="nextRem"></div>
+      <div class="chips" id="todayChips"></div>
+    </div>
+  </div>
+
+  <div class="tiles">
+    <div class="tile"><div class="v" id="streak">0</div><div class="l">🔥 серія днів · рекорд <span id="bestStreak">0</span></div></div>
+    <div class="tile"><div class="v" id="rate">—</div><div class="l">🎯 виконано нагадувань (30 дн)</div></div>
+    <div class="tile"><div class="v" id="week">0</div><div class="l">за 7 днів</div></div>
+    <div class="tile"><div class="v" id="month">0</div><div class="l">за 30 днів</div></div>
+    <div class="tile"><div class="v" id="total">0</div><div class="l">всього</div></div>
+    <div class="tile"><div class="v" id="bestDay">—</div><div class="l" id="bestDayL">🏆 найкращий день</div></div>
+  </div>
+
+  <h2>Останні 30 днів</h2>
+  <div class="card"><canvas id="chartDays" height="190"></canvas></div>
+
+  <h2>Активність</h2>
+  <div class="card">
+    <div class="heat" id="heat"></div>
+    <div class="legend muted">менше <i style="background:var(--bg)"></i><i data-l="1"></i><i data-l="2"></i><i data-l="3"></i><i data-l="4"></i> більше</div>
+  </div>
+
+  <h2>По годинах (30 днів)</h2>
+  <div class="card"><canvas id="chartHours" height="150"></canvas></div>
+</section>
+
+<!-- ============ ІСТОРІЯ ============ -->
+<section id="tab-history" class="hidden">
+  <div class="card">
+    <div class="row">
+      <input id="addNum" type="number" inputmode="numeric" min="1" max="1000" placeholder="Скільки зробив?">
+      <button id="addBtn" style="white-space:nowrap">+ Додати</button>
+    </div>
+    <div class="muted" style="font-size:13px;margin-top:6px">Записати підхід поза розкладом</div>
+  </div>
+  <div id="history"></div>
+</section>
+
+<!-- ============ НАЛАШТУВАННЯ ============ -->
+<section id="tab-settings" class="hidden">
+  <div class="card">
+    <div class="row between">
+      <div><div style="font-weight:600">Нагадування</div><div class="muted" style="font-size:13px" id="enabledHint"></div></div>
+      <label class="switch"><input type="checkbox" id="sEnabled"><span></span></label>
+    </div>
+  </div>
+  <div class="card">
+    <div class="field">
+      <label>Віджимань за раз</label>
+      <div class="stepper">
+        <button class="ghost" data-step="-5">−</button>
+        <input id="sReps" type="number" inputmode="numeric" min="1" max="1000">
+        <button class="ghost" data-step="5">+</button>
+      </div>
+    </div>
+    <div class="field two">
+      <div><label>З</label><input id="sStart" type="time"></div>
+      <div><label>До</label><input id="sEnd" type="time"></div>
+    </div>
+    <div class="field">
+      <label>Як часто</label>
+      <select id="sInterval">
+        <option value="15">кожні 15 хв</option><option value="20">кожні 20 хв</option>
+        <option value="30">кожні 30 хв</option><option value="45">кожні 45 хв</option>
+        <option value="60">щогодини</option><option value="90">кожні 1,5 год</option>
+        <option value="120">кожні 2 год</option><option value="180">кожні 3 год</option>
+        <option value="240">кожні 4 год</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Дні</label>
+      <div class="days" id="sDays"></div>
+    </div>
+    <div class="field">
+      <label>Часовий пояс</label>
+      <select id="sTz"></select>
+    </div>
+  </div>
+  <div class="preview" id="preview"></div>
+  <button class="wide" id="saveBtn">Зберегти</button>
+</section>
+
+<nav>
+  <button data-tab="stats" class="active"><b>📊</b>Статистика</button>
+  <button data-tab="history"><b>📜</b>Історія</button>
+  <button data-tab="settings"><b>⚙️</b>Налаштування</button>
+</nav>
+<div id="toast"></div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+tg?.ready(); tg?.expand();
+const INIT = tg?.initData || "";
+const $ = (id) => document.getElementById(id);
+const DAY = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
+const MONTHS = ["січ", "лют", "бер", "кві", "тра", "чер", "лип", "сер", "вер", "жов", "лис", "гру"];
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+let S = null, charts = {}, openEditor = null;
+
+function haptic(type = "light") { tg?.HapticFeedback?.impactOccurred?.(type); }
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2000); }
+function fmtDate(iso) { const [y, m, d] = iso.split("-"); return `${+d} ${MONTHS[+m - 1]}`; }
+function plural(n, a, b, c) { n = Math.abs(n) % 100; const n1 = n % 10; if (n > 10 && n < 20) return c; if (n1 > 1 && n1 < 5) return b; if (n1 === 1) return a; return c; }
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, { ...opts, headers: { "Content-Type": "application/json", "X-Init-Data": INIT } });
+  if (!r.ok) { let msg = "Помилка " + r.status; try { msg = (await r.json()).detail || msg; } catch {} throw new Error(msg); }
+  return r.json();
+}
+async function load() {
+  try { S = await api("/api/state"); render(); }
+  catch (e) { toast(e.message); }
+}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll("nav button").forEach((b) => b.onclick = () => {
+  document.querySelectorAll("nav button").forEach((x) => x.classList.toggle("active", x === b));
+  ["stats", "history", "settings"].forEach((t) => $("tab-" + t).classList.toggle("hidden", t !== b.dataset.tab));
+  haptic("soft"); window.scrollTo(0, 0);
+});
+
+function render() { renderStats(); renderHistory(); renderSettings(); }
+
+/* ---------- stats ---------- */
+function renderStats() {
+  const st = S.stats, t = st.today;
+  $("todayDone").textContent = t.done;
+  $("todayGoal").textContent = t.goal ? `з ${t.goal}` : "вихідний";
+  const pct = t.goal ? Math.min(1, t.done / t.goal) : (t.done ? 1 : 0);
+  $("ringArc").style.strokeDashoffset = 301.6 * (1 - pct);
+  $("ringArc").style.stroke = pct >= 1 ? "var(--ok)" : "var(--accent)";
+  $("todayMsg").textContent = !t.goal ? "Сьогодні вихідний 😌" : pct >= 1 ? "Ціль виконана 🎉" : `Ще ${t.goal - t.done} до цілі`;
+  $("nextRem").textContent = S.settings.enabled ? (st.next_reminder ? `Наступне: ${st.next_reminder}` : "") : "⏸ Нагадування на паузі";
+  const c = t.sets;
+  $("todayChips").innerHTML = [["✅", c.done], ["❌", c.skipped], ["😴", c.missed], ["⏳", c.pending]]
+    .filter(([, n]) => n).map(([i, n]) => `<span class="chip">${i} ${n}</span>`).join("");
+  $("streak").textContent = st.streak; $("bestStreak").textContent = st.best_streak;
+  $("rate").textContent = st.completion_rate == null ? "—" : st.completion_rate + "%";
+  $("week").textContent = st.week; $("month").textContent = st.month; $("total").textContent = st.total;
+  $("bestDay").textContent = st.best_day ? st.best_day.done : "—";
+  $("bestDayL").textContent = st.best_day ? `🏆 рекорд за день · ${fmtDate(st.best_day.date)}` : "🏆 рекорд за день";
+
+  const accent = css("--accent") || "#2f80ed", hint = css("--hint") || "#8e8e93", ok = "#34c759";
+  Chart.defaults.color = hint; Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+  const grid = { color: hint + "22" }, noGrid = { display: false };
+
+  charts.days?.destroy();
+  charts.days = new Chart($("chartDays"), {
+    data: {
+      labels: st.series.map((d) => fmtDate(d.date)),
+      datasets: [
+        { type: "bar", label: "Зроблено", data: st.series.map((d) => d.done), borderRadius: 4,
+          backgroundColor: st.series.map((d) => d.goal && d.done >= d.goal ? ok : accent) },
+        { type: "line", label: "Ціль", data: st.series.map((d) => d.goal), borderColor: hint, borderDash: [4, 4],
+          borderWidth: 1.5, pointRadius: 0, stepped: "middle" },
+      ],
+    },
+    options: { plugins: { legend: { display: false } }, interaction: { mode: "index", intersect: false },
+      scales: { x: { grid: noGrid, ticks: { maxTicksLimit: 6, maxRotation: 0 } }, y: { beginAtZero: true, grid, border: { display: false } } } },
+  });
+
+  charts.hours?.destroy();
+  const hours = [...Array(24).keys()];
+  const first = Math.max(0, Math.min(...hours.filter((h) => st.hourly[h]).concat([7])) - 1);
+  const lastH = Math.min(23, Math.max(...hours.filter((h) => st.hourly[h]).concat([22])) + 1);
+  const hs = hours.slice(first, lastH + 1);
+  charts.hours = new Chart($("chartHours"), {
+    type: "bar",
+    data: { labels: hs.map((h) => h + ":00"), datasets: [{ data: hs.map((h) => st.hourly[h]), backgroundColor: accent, borderRadius: 4 }] },
+    options: { plugins: { legend: { display: false } },
+      scales: { x: { grid: noGrid, ticks: { maxTicksLimit: 8, maxRotation: 0 } }, y: { beginAtZero: true, grid, border: { display: false } } } },
+  });
+
+  // heatmap
+  const max = Math.max(1, ...st.heatmap.map((d) => d.done));
+  const lvl = (n) => (n <= 0 ? 0 : Math.min(4, Math.ceil((n / max) * 4)));
+  const shade = (l) => l ? `color-mix(in srgb, ${accent} ${[0, 30, 55, 78, 100][l]}%, transparent)` : "";
+  $("heat").innerHTML = st.heatmap.map((d) => `<div title="${fmtDate(d.date)}: ${d.done}" style="${d.done ? `background:${shade(lvl(d.done))}` : ""}"></div>`).join("");
+  document.querySelectorAll(".legend i[data-l]").forEach((i) => i.style.background = shade(+i.dataset.l));
+}
+
+/* ---------- history ---------- */
+const ICON = { done: "✅", skipped: "❌", missed: "😴", pending: "⏳" };
+function renderHistory() {
+  if (!S.recent.length) { $("history").innerHTML = `<div class="empty">Ще нічого немає. Перше нагадування вже скоро 💪</div>`; return; }
+  const groups = {};
+  S.recent.forEach((s) => (groups[s.date] ||= []).push(s));
+  $("history").innerHTML = Object.entries(groups).map(([date, items]) => {
+    const sum = items.reduce((a, s) => a + s.done, 0);
+    return `<div class="day-head"><span>${date === S.stats.today.date ? "Сьогодні" : fmtDate(date)}</span><span>${sum} ${plural(sum, "віджимання", "віджимання", "віджимань")}</span></div>
+      <div class="card" style="padding:0 14px">${items.map((s) => `
+        <div class="item" data-id="${s.id}">
+          <div class="ico">${ICON[s.status]}</div>
+          <div class="t"><div>${s.time}${s.source === "manual" ? ' <span class="muted">· вручну</span>' : ""}</div>
+            <div class="muted" style="font-size:13px">${s.status === "pending" ? "чекає відповіді" : s.source === "manual" ? "" : "план " + s.planned}</div></div>
+          <div class="n">${s.done}</div>
+        </div>
+        <div class="editor hidden" id="ed-${s.id}">
+          <input type="number" inputmode="numeric" min="0" max="1000" value="${s.done || s.planned}">
+          <button data-save="${s.id}">✓</button><button class="danger" data-del="${s.id}">🗑</button>
+        </div>`).join("")}</div>`;
+  }).join("");
+}
+$("history").addEventListener("click", async (e) => {
+  const save = e.target.closest("[data-save]"), del = e.target.closest("[data-del]"), item = e.target.closest(".item");
+  if (save) {
+    const id = save.dataset.save, v = +$("ed-" + id).querySelector("input").value;
+    try { S = await api(`/api/sets/${id}`, { method: "PATCH", body: JSON.stringify({ done: v }) }); render(); haptic("medium"); toast("Збережено"); }
+    catch (err) { toast(err.message); }
+  } else if (del) {
+    const go = async () => { try { S = await api(`/api/sets/${del.dataset.del}`, { method: "DELETE" }); render(); toast("Видалено"); } catch (err) { toast(err.message); } };
+    tg?.showConfirm ? tg.showConfirm("Видалити цей підхід?", (ok) => ok && go()) : confirm("Видалити?") && go();
+  } else if (item) {
+    const ed = $("ed-" + item.dataset.id);
+    if (openEditor && openEditor !== ed) openEditor.classList.add("hidden");
+    ed.classList.toggle("hidden"); openEditor = ed; haptic("soft");
+  }
+});
+$("addBtn").onclick = async () => {
+  const n = +$("addNum").value;
+  if (!n || n < 1) return toast("Введи число");
+  try { S = await api("/api/sets", { method: "POST", body: JSON.stringify({ done: n }) }); $("addNum").value = ""; render(); haptic("medium"); toast(`Записав ${n} 💪`); }
+  catch (e) { toast(e.message); }
+};
+
+/* ---------- settings ---------- */
+let draftDays = "";
+function tzList(current) {
+  let list = [];
+  try { list = Intl.supportedValuesOf("timeZone"); } catch {}
+  if (!list.length) list = ["Europe/London", "Europe/Kyiv", "Europe/Warsaw", "Europe/Berlin", "Europe/Lisbon", "America/New_York", "Asia/Dubai"];
+  const local = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return [...new Set([current, local, ...list])].filter(Boolean);
+}
+function renderSettings() {
+  const s = S.settings;
+  $("sEnabled").checked = s.enabled;
+  $("sReps").value = s.reps; $("sStart").value = s.start_time; $("sEnd").value = s.end_time;
+  if (![...$("sInterval").options].some((o) => +o.value === s.interval_min))
+    $("sInterval").add(new Option(`кожні ${s.interval_min} хв`, s.interval_min));
+  $("sInterval").value = s.interval_min;
+  draftDays = s.days;
+  $("sDays").innerHTML = DAY.map((d, i) => `<button data-d="${i + 1}" class="${s.days.includes(i + 1) ? "on" : ""}">${d}</button>`).join("");
+  $("sTz").innerHTML = tzList(s.tz).map((z) => `<option ${z === s.tz ? "selected" : ""}>${z}</option>`).join("");
+  updatePreview();
+}
+function readForm() {
+  return { enabled: $("sEnabled").checked, reps: +$("sReps").value, start_time: $("sStart").value, end_time: $("sEnd").value,
+           interval_min: +$("sInterval").value, days: draftDays, tz: $("sTz").value };
+}
+function updatePreview() {
+  const f = readForm();
+  $("enabledHint").textContent = f.enabled ? "Увімкнені" : "На паузі";
+  const toMin = (t) => { const [h, m] = (t || "0:0").split(":"); return +h * 60 + +m; };
+  const span = toMin(f.end_time) - toMin(f.start_time);
+  if (span < 0 || !f.interval_min) { $("preview").textContent = "Початок має бути раніше за кінець"; return; }
+  const times = Math.floor(span / f.interval_min) + 1, total = times * (f.reps || 0);
+  $("preview").textContent = `${times} ${plural(times, "нагадування", "нагадування", "нагадувань")} на день · ${total} ${plural(total, "віджимання", "віджимання", "віджимань")} · ${f.days.length} ${plural(f.days.length, "день", "дні", "днів")} на тиждень`;
+}
+$("tab-settings").addEventListener("input", updatePreview);
+$("tab-settings").addEventListener("change", updatePreview);
+document.querySelectorAll("[data-step]").forEach((b) => b.onclick = () => {
+  $("sReps").value = Math.max(1, Math.min(1000, (+$("sReps").value || 0) + +b.dataset.step)); haptic("soft"); updatePreview();
+});
+$("sDays").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-d]"); if (!b) return;
+  b.classList.toggle("on");
+  draftDays = [...document.querySelectorAll("#sDays .on")].map((x) => x.dataset.d).join("");
+  haptic("soft"); updatePreview();
+});
+$("saveBtn").onclick = async () => {
+  const f = readForm();
+  if (!f.days) return toast("Обери хоча б один день");
+  $("saveBtn").disabled = true;
+  try { S = await api("/api/settings", { method: "PUT", body: JSON.stringify(f) }); render(); tg?.HapticFeedback?.notificationOccurred?.("success"); toast("Збережено ✅"); }
+  catch (e) { tg?.HapticFeedback?.notificationOccurred?.("error"); toast(e.message); }
+  finally { $("saveBtn").disabled = false; }
+};
+
+/* ---------- start ---------- */
+if (!INIT) {
+  $("noTg").classList.remove("hidden"); $("tab-stats").classList.add("hidden"); document.querySelector("nav").classList.add("hidden");
+} else {
+  load();
+  document.addEventListener("visibilitychange", () => document.visibilityState === "visible" && load());
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+# Для деплою з терміналу: npm run deploy
+# Змінні задаються як секрети (не комітяться):
+#   npx wrangler secret put BOT_TOKEN
+#   npx wrangler secret put SECRET
+#   npx wrangler secret put GAS_URL
+#   npx wrangler secret put ALLOWED_USER_IDS
+name = "pushup-bot"
+main = "worker/worker.js"
+compatibility_date = "2026-11-01"
+
+[triggers]
+crons = ["* * * * *"]

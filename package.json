@@ -1,0 +1,13 @@
+{
+  "name": "pushup-bot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Telegram-бот і міні-апп для нагадувань про віджимання: Cloudflare Worker + Google Apps Script + Google Таблиця",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "npm run build && node tests/harness.mjs",
+    "deploy": "npm run build && wrangler deploy"
+  },
+  "engines": { "node": ">=18" }
+}
