@@ -1,227 +1,231 @@
 # 💪 Pushup Bot
 
-Telegram-бот, який протягом дня нагадує віджиматися, і міні-апп зі статистикою та налаштуваннями.
-Працює **24/7 і безкоштовно**: без власного сервера, на Cloudflare Workers + Google Apps Script, а база даних — звичайна Google Таблиця.
+**English** · [Українська](README.uk.md)
 
-## Можливості
+A Telegram bot that reminds you to do push-ups throughout the day, plus a Telegram Mini App with stats and settings.
+Runs **24/7 for free** with no server of your own: Cloudflare Workers + Google Apps Script, with a plain Google Sheet as the database.
 
-- ⏰ Нагадування за розкладом: скільки віджимань, з якої до якої години, як часто, в які дні тижня, у твоєму часовому поясі.
-- Під кожним нагадуванням кнопки **✅ Зробив · ✏️ Інша к-сть · ⏰ +10 хв · ❌ Пропустити**.
-- Якщо не відповів до наступного нагадування — підхід автоматично позначається «😴 без відповіді».
-- 📊 Міні-апп у Telegram:
-  - **Статистика** — прогрес за сьогодні, серія днів поспіль, % виконаних нагадувань, графік за 30 днів, теплокарта активності, розподіл по годинах;
-  - **Історія** — усі підходи, можна виправити кількість, видалити або додати підхід вручну;
-  - **Налаштування** — усе вище без команд.
-- Усе можна робити й командами (див. [Команди бота](#команди-бота)). Просто надіслане число записується як підхід.
-- Дані лежать у твоїй Google Таблиці — можна дивитися, правити, будувати свої графіки.
+> The bot's messages and the Mini App interface are in Ukrainian.
 
-## Як це влаштовано
+## Features
+
+- ⏰ Scheduled reminders: how many push-ups, from what time until what time, how often, on which days of the week, in your time zone.
+- Every reminder has buttons: **✅ Done · ✏️ Other amount · ⏰ +10 min · ❌ Skip**.
+- If you don't answer before the next reminder, the set is automatically marked as "😴 missed".
+- 📊 Mini App inside Telegram:
+  - **Stats**: today's progress, day streak, % of reminders completed, 30-day chart, activity heatmap, breakdown by hour.
+  - **History**: every set; edit the amount, delete a set or add one manually.
+  - **Settings**: everything above without typing commands.
+- Everything also works with commands (see [Bot commands](#bot-commands)). Sending a plain number logs it as a set.
+- Your data lives in your own Google Sheet, so you can view it, edit it and build your own charts.
+
+## How it works
 
 ```
                 ┌───────────────────────── Cloudflare Worker (*.workers.dev) ─────────────────────────┐
-Telegram ──────▶│ /tg     вебхук: одразу відповідає 200, апдейт передає в Apps Script у фоні          │
-Міні-апп ──────▶│ /api/*  перевіряє підпис Telegram (initData) і проксіює в Apps Script               │
-Користувач ────▶│ /       віддає сам міні-апп (HTML вбудований у worker.js)                           │
-Cron (щохв) ───▶│ scheduled → «tick» в Apps Script                                                    │
+Telegram ──────▶│ /tg     webhook: replies 200 immediately, forwards the update to Apps Script        │
+Mini App ──────▶│ /api/*  verifies the Telegram signature (initData) and proxies to Apps Script       │
+User ──────────▶│ /       serves the Mini App itself (HTML is bundled into worker.js)                 │
+Cron (1/min) ──▶│ scheduled → "tick" in Apps Script                                                   │
                 └───────────────────────────────────────┬─────────────────────────────────────────────┘
                                                         ▼
-                               Google Apps Script (doPost) ──▶ Google Таблиця (аркуші Users, Sets)
+                               Google Apps Script (doPost) ──▶ Google Sheet (Users, Sets tabs)
                                        │
-                                       └──▶ Telegram Bot API (надсилає повідомлення)
+                                       └──▶ Telegram Bot API (sends messages)
 ```
 
-Навіщо Worker, а не напряму Apps Script? Apps Script на запит Telegram відповідає редиректом `302`, Telegram вважає це помилкою і повторює доставку — бот відповідає по кілька разів або зависає. Worker відповідає Telegram миттєво, дає безкоштовну HTTPS-адресу для міні-аппу і безкоштовний cron.
+Why a Worker instead of calling Apps Script directly? Apps Script answers Telegram's webhook with a `302` redirect. Telegram treats that as a failure and keeps retrying, so the bot replies several times or gets stuck. The Worker answers Telegram instantly, gives you a free HTTPS address for the Mini App, and provides a free cron.
 
-Worker і Apps Script перевіряють один одного спільним секретом `SECRET`, тож навіть якщо хтось дізнається адресу Apps Script, нічого зробити не зможе.
+The Worker and Apps Script authenticate each other with a shared `SECRET`, so even if someone finds your Apps Script URL, they can't do anything with it.
 
-## Структура репозиторію
+## Repository layout
 
 ```
-apps-script/Code.gs      логіка бота: розклад, кнопки, команди, статистика, API, робота з Таблицею
-worker/worker.src.js     вихідний код Cloudflare Worker'а
-worker/worker.js         ЗГЕНЕРОВАНИЙ файл (worker.src.js + міні-апп) — саме його вставляєш у Cloudflare
-webapp/index.html        міні-апп (один HTML-файл, Chart.js з CDN)
-scripts/build.mjs        збирає worker/worker.js
-tests/harness.mjs        тести з імітацією Google і Telegram (npm test)
-wrangler.toml            конфіг для деплою Worker'а з терміналу (необов'язково)
+apps-script/Code.gs      bot logic: schedule, buttons, commands, stats, API, Google Sheet storage
+worker/worker.src.js     Cloudflare Worker source
+worker/worker.js         GENERATED file (worker.src.js + Mini App): this is what you paste into Cloudflare
+webapp/index.html        the Mini App (single HTML file, Chart.js from a CDN)
+scripts/build.mjs        builds worker/worker.js
+tests/harness.mjs        tests with mocked Google and Telegram services (npm test)
+wrangler.toml            config for deploying the Worker from the terminal (optional)
 ```
 
 ---
 
-# 🚀 Налаштування з нуля
+# 🚀 Setup from scratch
 
-Знадобиться: акаунт Telegram, Google-акаунт, безкоштовний акаунт Cloudflare. Близько 15 хвилин.
+You'll need a Telegram account, a Google account and a free Cloudflare account. It takes about 15 minutes.
 
-Порядок важливий: спершу створюємо Worker (щоб знати його адресу), потім Apps Script, потім з'єднуємо їх.
+Order matters: create the Worker first (to get its URL), then Apps Script, then connect them.
 
-## Крок 1. Створи бота в Telegram
+## Step 1. Create the Telegram bot
 
-1. Відкрий [@BotFather](https://t.me/BotFather) → `/newbot`.
-2. Введи назву (будь-яку) і username (має закінчуватись на `bot`, напр. `my_pushup_bot`).
-3. BotFather надішле **токен** виду `1234567890:AAH...`. Збережи його — це `BOT_TOKEN`.
-4. Дізнайся свій Telegram id: напиши [@userinfobot](https://t.me/userinfobot) — він відповість числом. Це `ALLOWED_USER_IDS` (щоб ботом не користувались інші).
+1. Open [@BotFather](https://t.me/BotFather) → `/newbot`.
+2. Enter a name (anything) and a username (must end in `bot`, e.g. `my_pushup_bot`).
+3. BotFather sends you a **token** like `1234567890:AAH...`. Keep it: this is your `BOT_TOKEN`.
+4. Find your Telegram id: message [@userinfobot](https://t.me/userinfobot) and it replies with a number. This goes into `ALLOWED_USER_IDS`, so nobody else can use your bot.
 
-> ⚠️ Токен — це пароль від бота. Не викладай його в код, скриншоти чи GitHub. Якщо він засвітився — у BotFather зроби `/revoke` і онови його в Apps Script та Cloudflare.
+> ⚠️ The token is the password to your bot. Never put it in code, screenshots or GitHub. If it leaks, run `/revoke` in BotFather and update it in Apps Script and Cloudflare.
 
-## Крок 2. Створи Cloudflare Worker
+## Step 2. Create the Cloudflare Worker
 
-1. Зайди на [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages** (у меню **Compute**) → **Create**.
-2. Обери **Start with Hello World!** (⚠️ **не** «Upload and deploy» / «Drag and drop» — той варіант тільки для статичних файлів і код Worker'а там не запуститься).
-3. Назви Worker `pushup-bot` → **Deploy**.
-4. Запиши адресу Worker'а, напр. `https://pushup-bot.твій-нік.workers.dev` — це `WEBAPP_URL`.
-5. Натисни **Edit code**, видали весь код у редакторі й встав **увесь** вміст файлу [`worker/worker.js`](worker/worker.js) → **Deploy**.
+1. Go to [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages** (under **Compute**) → **Create**.
+2. Choose **Start with Hello World!** (⚠️ **not** "Upload and deploy" / "Drag and drop": that option is for static files only, and Worker code won't run there).
+3. Name the Worker `pushup-bot` → **Deploy**.
+4. Note the Worker URL, e.g. `https://pushup-bot.your-name.workers.dev`. This is your `WEBAPP_URL`.
+5. Click **Edit code**, delete everything in the editor, paste the **entire** contents of [`worker/worker.js`](worker/worker.js) → **Deploy**.
 
-Змінні додамо на кроці 4, коли буде адреса Apps Script.
+You'll add the variables in step 4, once you have the Apps Script URL.
 
-## Крок 3. Google Таблиця + Apps Script
+## Step 3. Google Sheet + Apps Script
 
-1. Створи нову [Google Таблицю](https://sheets.new), назви, напр., «Pushups».
-2. **Розширення (Extensions) → Apps Script**. Відкриється редактор, прив'язаний до цієї Таблиці.
-3. Видали весь код у `Code.gs` і встав вміст файлу [`apps-script/Code.gs`](apps-script/Code.gs). Натисни 💾 (Save).
-4. Ліворуч ⚙️ **Project Settings** → внизу **Script Properties** → **Add script property** і додай:
+1. Create a new [Google Sheet](https://sheets.new), e.g. "Pushups".
+2. **Extensions → Apps Script**. This opens an editor bound to that sheet.
+3. Delete all the code in `Code.gs` and paste the contents of [`apps-script/Code.gs`](apps-script/Code.gs). Click 💾 (Save).
+4. On the left: ⚙️ **Project Settings** → **Script Properties** at the bottom → **Add script property**, and add:
 
    | Property | Value |
    |---|---|
-   | `BOT_TOKEN` | токен із кроку 1 |
-   | `WEBAPP_URL` | адреса Worker'а з кроку 2 (**без** `/` у кінці) |
-   | `ALLOWED_USER_IDS` | твій Telegram id (кілька — через кому). Порожньо = бот для всіх |
-   | `DEFAULT_TZ` | *(необов'язково)* напр. `Europe/Kyiv`. За замовчуванням `Europe/London` |
+   | `BOT_TOKEN` | the token from step 1 |
+   | `WEBAPP_URL` | the Worker URL from step 2 (**no** trailing `/`) |
+   | `ALLOWED_USER_IDS` | your Telegram id (comma-separated for several). Empty = anyone can use the bot |
+   | `DEFAULT_TZ` | *(optional)* e.g. `Europe/Berlin`. Defaults to `Europe/London` |
 
    → **Save script properties**.
-5. Поверніться до редактора (`<>` ліворуч). Угорі у списку функцій обери **`setup`** → **Run**.
-   - Google попросить дозвіл: **Review permissions** → обери акаунт → «Google hasn't verified this app» → **Advanced** → **Go to … (unsafe)** → **Allow**. Це твій власний скрипт, тому таке попередження нормальне.
-   - У журналі (Execution log) з'явиться рядок
+5. Go back to the editor (`<>` on the left). In the function dropdown at the top, select **`setup`** → **Run**.
+   - Google will ask for permission: **Review permissions** → choose your account → "Google hasn't verified this app" → **Advanced** → **Go to … (unsafe)** → **Allow**. It's your own script, so this warning is expected.
+   - The Execution log shows a line
      `🔑 SECRET (встав його у Cloudflare Worker як змінну SECRET): 3f2a…`
-     **Скопіюй цей SECRET** — він знадобиться на кроці 4. (Він також збережений у Script Properties.)
-   - Далі буде `✅ Готово! Напиши боту /start`. Також у Таблиці з'являться аркуші `Users` і `Sets`.
-6. **Deploy → New deployment** → біля «Select type» натисни ⚙️ → **Web app**:
+     **Copy that SECRET**: you'll need it in step 4. (It's also saved in Script Properties.)
+   - Then `✅ Готово! Напиши боту /start` ("Done! Send /start to the bot"). The `Users` and `Sets` tabs appear in your sheet.
+6. **Deploy → New deployment** → click ⚙️ next to "Select type" → **Web app**:
    - **Execute as:** Me
-   - **Who has access:** **Anyone** (саме «Anyone», не «Anyone with Google account»)
-   - **Deploy** → скопіюй **Web app URL** (закінчується на `/exec`) — це `GAS_URL`.
+   - **Who has access:** **Anyone** (exactly "Anyone", not "Anyone with Google account")
+   - **Deploy** → copy the **Web app URL** (ends with `/exec`). This is your `GAS_URL`.
 
-## Крок 4. Змінні й cron у Worker'і
+## Step 4. Worker variables and cron
 
 1. Cloudflare → **Workers & Pages → pushup-bot → Settings**.
-2. Блок **Variables and Secrets** → **+ Add** для кожної:
+2. Under **Variables and Secrets** → **+ Add** each of these:
 
-   | Назва | Тип | Значення |
+   | Name | Type | Value |
    |---|---|---|
-   | `BOT_TOKEN` | Secret | токен бота |
-   | `SECRET` | Secret | SECRET із журналу `setup` |
-   | `GAS_URL` | Secret або Text | адреса `…/exec` з кроку 3.6 |
-   | `ALLOWED_USER_IDS` | Text | твій Telegram id (як в Apps Script) |
+   | `BOT_TOKEN` | Secret | the bot token |
+   | `SECRET` | Secret | the SECRET from the `setup` log |
+   | `GAS_URL` | Secret or Text | the `…/exec` URL from step 3.6 |
+   | `ALLOWED_USER_IDS` | Text | your Telegram id (same as in Apps Script) |
 
-   → **Deploy**. Значення вставляй без пробілів і переносів рядка.
-3. Там же блок **Trigger Events** (або **Triggers**) → **+ Add → Cron Triggers** → `* * * * *` (щохвилини) → **Add**.
+   → **Deploy**. Paste values with no spaces or line breaks.
+3. In the same place, under **Trigger Events** (or **Triggers**) → **+ Add → Cron Triggers** → `* * * * *` (every minute) → **Add**.
 
-## Крок 5. Перевірка
+## Step 5. Check it works
 
-1. Відкрий у браузері `https://pushup-bot.твій-нік.workers.dev/health` — має бути
+1. Open `https://pushup-bot.your-name.workers.dev/health` in a browser. You should see
    `{"worker":"ok","apps_script":"ok"}`.
-2. У Telegram напиши боту `/start` — прийде привітання з налаштуваннями.
-3. Напиши `/now` — прийде нагадування з кнопками. Натисни **✅ Зробив** — у Таблиці на аркуші `Sets` з'явиться рядок зі статусом `done`.
-4. Закрий і знову відкрий чат з ботом — біля поля вводу буде кнопка **📊 Статистика** (міні-апп).
+2. Send `/start` to your bot in Telegram. You'll get a welcome message with your settings.
+3. Send `/now`. A reminder with buttons arrives. Tap **✅ Зробив** (Done): a row with status `done` appears in the `Sets` tab of your sheet.
+4. Close and reopen the chat with the bot. A **📊 Статистика** (Stats) button appears next to the message box: that's the Mini App.
 
-Готово 🎉 Налаштуй розклад у міні-аппі (вкладка ⚙️) або командами.
+Done 🎉 Set your schedule in the Mini App (⚙️ tab) or with commands.
 
 ---
 
-## Команди бота
+## Bot commands
 
-| Команда | Що робить |
+| Command | What it does |
 |---|---|
-| `/start` | привітання і поточні налаштування |
-| `/stats` | статистика текстом |
-| `/settings` | поточні налаштування |
-| `/now` | позачергове нагадування зараз |
-| `/add 25` | записати підхід вручну (або просто надішли `25`) |
-| `/reps 20` | скільки віджимань за раз |
-| `/hours 9-21` | проміжок часу (можна `9:30-21:15`) |
-| `/every 60` | інтервал у хвилинах (5–720) |
-| `/days 12345` | дні тижня: 1 = Пн … 7 = Нд |
-| `/tz Europe/Kyiv` | часовий пояс ([список](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)) |
-| `/pause`, `/resume` | вимкнути / увімкнути нагадування |
+| `/start` | welcome message and current settings |
+| `/stats` | stats as text |
+| `/settings` | current settings |
+| `/now` | send a reminder right now |
+| `/add 25` | log a set manually (or just send `25`) |
+| `/reps 20` | push-ups per reminder |
+| `/hours 9-21` | active hours (also `9:30-21:15`) |
+| `/every 60` | interval in minutes (5–720) |
+| `/days 12345` | days of the week: 1 = Mon … 7 = Sun |
+| `/tz Europe/Kyiv` | time zone ([list](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)) |
+| `/pause`, `/resume` | turn reminders off / on |
 
-## Як працюють нагадування
+## How reminders work
 
-- Cron Worker'а щохвилини викликає Apps Script. Той рахує слоти дня: від «з» до «до» з кроком «інтервал», лише у вибрані дні, у твоєму часовому поясі — і надсилає нагадування, коли настав новий слот.
-- Якщо система не працювала і слот пропущено більш ніж на 15 хв — старе нагадування не надсилається.
-- «⏰ +10 хв» ховає кнопки й через 10 хв надсилає нагадування знову.
-- Без відповіді протягом `інтервалу` (мінімум 30 хв, максимум 3 год) → статус `missed`.
-- Ціль на день = кількість нагадувань × віджимань за раз. Серія = дні поспіль, коли було хоча б одне віджимання.
+- The Worker's cron calls Apps Script every minute. Apps Script works out the day's slots (from "start" to "end" in steps of "interval", only on the selected days, in your time zone) and sends a reminder when a new slot begins.
+- If the system was down and a slot was missed by more than 15 minutes, that old reminder is not sent.
+- "⏰ +10 min" hides the buttons and sends the reminder again 10 minutes later.
+- No answer within one `interval` (at least 30 min, at most 3 h) → status `missed`.
+- Daily goal = number of reminders × push-ups per reminder. Streak = consecutive days with at least one push-up.
 
-## Таблиця (база даних)
+## The sheet (database)
 
-**`Users`** — налаштування: `chat_id, reps, start_time, end_time, interval_min, days, tz, enabled, last_slot, created_at`.
+**`Users`**: settings: `chat_id, reps, start_time, end_time, interval_min, days, tz, enabled, last_slot, created_at`.
 
-**`Sets`** — кожен підхід окремим рядком:
+**`Sets`**: one row per set:
 
-| колонка | значення |
+| column | meaning |
 |---|---|
-| `local_time` | дата й час у твоєму поясі (`2026-11-19 14:00`) |
-| `planned` / `done` | план / скільки зроблено |
+| `local_time` | date and time in your time zone (`2026-11-19 14:00`) |
+| `planned` / `done` | planned / actually done |
 | `status` | `done` · `skipped` · `missed` · `pending` |
-| `source` | `reminder` (нагадування) або `manual` (вручну) |
-| решта | службові поля (UTC-час, id повідомлення тощо) |
+| `source` | `reminder` or `manual` |
+| the rest | internal fields (UTC time, message id, etc.) |
 
-Можна будувати свої зведені таблиці й графіки. Правити рядки вручну можна, але не змінюй порядок колонок і заголовки.
+You can build your own pivot tables and charts. Editing rows by hand is fine, but don't reorder the columns or change the headers.
 
 ---
 
-## 🔄 Оновлення коду
+## 🔄 Updating the code
 
-**Apps Script.** Після будь-якої зміни `Code.gs` обов'язково: **Deploy → Manage deployments → ✏️ (Edit) → Version: New version → Deploy**. Інакше адреса `/exec` і далі виконує старий код. Адреса при цьому не змінюється.
+**Apps Script.** After any change to `Code.gs` you must do **Deploy → Manage deployments → ✏️ (Edit) → Version: New version → Deploy**. Otherwise the `/exec` URL keeps running the old code. The URL itself doesn't change.
 
-**Worker.** Міняєш `worker/worker.src.js` або `webapp/index.html` → `npm run build` → встав новий `worker/worker.js` у редактор Cloudflare → **Deploy** (або `npm run deploy`, див. нижче).
+**Worker.** Change `worker/worker.src.js` or `webapp/index.html` → `npm run build` → paste the new `worker/worker.js` into the Cloudflare editor → **Deploy** (or use `npm run deploy`, see below).
 
-### Деплой Worker'а з терміналу (необов'язково)
+### Deploying the Worker from the terminal (optional)
 
 ```bash
-npm i -g wrangler        # або використовуй npx wrangler
+npm i -g wrangler        # or use npx wrangler
 wrangler login
 npx wrangler secret put BOT_TOKEN
 npx wrangler secret put SECRET
 npx wrangler secret put GAS_URL
 npx wrangler secret put ALLOWED_USER_IDS
-npm run deploy           # збирає worker.js і деплоїть разом із cron із wrangler.toml
+npm run deploy           # builds worker.js and deploys it together with the cron from wrangler.toml
 ```
 
-### Розробка й тести
+### Development and tests
 
 ```bash
-npm run build   # зібрати worker/worker.js
-npm test        # тести: розклад, кнопки, команди, API, перехід на літній час, підпис initData
+npm run build   # build worker/worker.js
+npm test        # tests: schedule, buttons, commands, API, DST change, initData signature
 ```
-Потрібен лише Node.js 18+, залежностей немає.
+Only Node.js 18+ is needed; there are no dependencies.
 
 ---
 
-## 🛠 Якщо щось не працює
+## 🛠 Troubleshooting
 
-| Симптом | Причина і що робити |
+| Symptom | Cause and fix |
 |---|---|
-| Бот не відповідає взагалі | Відкрий `https://api.telegram.org/bot<ТОКЕН>/getWebhookInfo`. Дивись `url` і `last_error_message`. Або в Apps Script запусти функцію `webhookInfo`. |
-| `last_error_message: 404 Not Found`, а в `url` подвійний слеш `…dev//tg` | У `WEBAPP_URL` в кінці стоїть `/`. Прибери його і знову запусти `setup`. |
-| `last_error_message: 403` | `SECRET` у Worker'і не збігається з `SECRET` у Script Properties. |
-| `/health` → помилка Apps Script | Перевір `GAS_URL` (має закінчуватись на `/exec`) і що в деплої «Who has access: **Anyone**». Також `SECRET` має збігатися. |
-| Міні-апп відкривається, але порожній / налаштування порожні | Worker відповідає `401` — неправильний `BOT_TOKEN` у змінних Worker'а (зайвий пробіл, перенос рядка, інша назва). Перевстав його. |
-| Міні-апп: «Немає доступу» | Твого id немає в `ALLOWED_USER_IDS` у Worker'і. |
-| Змінив код, а бот поводиться по-старому | Не зроблено **New version** у Manage deployments (див. «Оновлення коду»). |
-| Немає кнопки «📊 Статистика» | Закрий і знову відкрий чат. Кнопку ставить `setup`, тож запусти його ще раз, якщо міняв `WEBAPP_URL`. |
-| Нагадування не приходять | Перевір Cron Trigger у Worker'і (`* * * * *`), що нагадування не на паузі (`/settings`) і що зараз вибраний день і проміжок часу. |
-| Cloudflare пише «This uploader does not yet support projects that require a build process» | Ти в режимі «Upload and deploy». Потрібно **Start with Hello World!** → **Edit code** (крок 2). |
+| The bot doesn't reply at all | Open `https://api.telegram.org/bot<TOKEN>/getWebhookInfo` and check `url` and `last_error_message`. Or run the `webhookInfo` function in Apps Script. |
+| `last_error_message: 404 Not Found` and the `url` has a double slash `…dev//tg` | `WEBAPP_URL` ends with `/`. Remove it and run `setup` again. |
+| `last_error_message: 403` | `SECRET` in the Worker doesn't match `SECRET` in Script Properties. |
+| `/health` shows an Apps Script error | Check `GAS_URL` (must end with `/exec`) and that the deployment has "Who has access: **Anyone**". `SECRET` must match too. |
+| The Mini App opens but is empty / settings are blank | The Worker returns `401`: wrong `BOT_TOKEN` in the Worker variables (extra space, line break, wrong name). Re-enter it. |
+| Mini App says "Немає доступу" (no access) | Your id isn't in the Worker's `ALLOWED_USER_IDS`. |
+| You changed the code but the bot behaves the old way | You didn't create a **New version** in Manage deployments (see "Updating the code"). |
+| No "📊 Статистика" button | Close and reopen the chat. `setup` sets the button, so run it again if you changed `WEBAPP_URL`. |
+| Reminders don't arrive | Check the Worker's Cron Trigger (`* * * * *`), that reminders aren't paused (`/settings`), and that today and the current time are inside your schedule. |
+| Cloudflare says "This uploader does not yet support projects that require a build process" | You're in "Upload and deploy" mode. Use **Start with Hello World!** → **Edit code** instead (step 2). |
 
-**Логи:** Worker → **Logs** (Real-time logs); Apps Script → ліве меню **Executions**.
+**Logs:** Worker → **Logs** (Real-time logs); Apps Script → **Executions** in the left menu.
 
-## Обмеження безкоштовних тарифів
+## Free tier limits
 
-- **Cloudflare Workers Free:** 100 000 запитів на день — бот використовує ~1 500 (cron щохвилини + твої дії).
-- **Apps Script (особистий акаунт):** 20 000 запитів `UrlFetch` на день, до 30 одночасних виконань. Для одного-кількох користувачів запас величезний.
-- Таблиця з кількома тисячами рядків працює швидко. Якщо `Sets` колись розростеться до десятків тисяч рядків — старі рядки можна перенести на окремий аркуш-архів.
+- **Cloudflare Workers Free:** 100,000 requests per day. The bot uses about 1,500 (cron every minute plus your actions).
+- **Apps Script (personal account):** 20,000 `UrlFetch` calls per day and up to 30 simultaneous executions. That's plenty for one or a few users.
+- A sheet with a few thousand rows stays fast. If `Sets` ever grows to tens of thousands of rows, move old rows to an archive tab.
 
-## Безпека
+## Security
 
-- Секрети (`BOT_TOKEN`, `SECRET`, `GAS_URL`) зберігаються лише в Script Properties та змінних Worker'а — **у коді їх немає**, репозиторій можна робити публічним.
-- Вебхук приймається тільки із заголовком `X-Telegram-Bot-Api-Secret-Token`.
-- API міні-аппу перевіряє підпис Telegram `initData` (HMAC-SHA256) і `ALLOWED_USER_IDS`.
-- Apps Script приймає запити тільки з правильним `SECRET`.
+- Secrets (`BOT_TOKEN`, `SECRET`, `GAS_URL`) live only in Script Properties and Worker variables. **They are not in the code**, so the repository can be public.
+- The webhook only accepts requests with the `X-Telegram-Bot-Api-Secret-Token` header.
+- The Mini App API verifies Telegram's `initData` signature (HMAC-SHA256) and `ALLOWED_USER_IDS`.
+- Apps Script only accepts requests that carry the correct `SECRET`.
