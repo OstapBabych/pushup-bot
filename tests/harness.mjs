@@ -61,7 +61,7 @@ function clean(v) { return typeof v === "string" && v.startsWith("'") ? v.slice(
 const sheets = {};
 const ss = { getId: () => "SID", getSheetByName: (n) => sheets[n] || null, insertSheet: (n) => (sheets[n] = new Sheet(n)) };
 const TOKEN = "123456789:TEST_TOKEN_abcdefghijklmnopqrstuvwxyz";
-const props = { BOT_TOKEN: TOKEN, WEBAPP_URL: "https://pb.test.workers.dev/", ALLOWED_USER_IDS: "111222333" };
+const props = { BOT_TOKEN: TOKEN, WEBAPP_URL: "https://pb.test.workers.dev/", ALLOWED_USER_IDS: "111222333, 444" };
 let cache = {};
 const tgCalls = [];
 let msgId = 100;
@@ -99,8 +99,8 @@ function post(payload) {
 }
 let uid = 1;
 const ME = 111222333;
-const msg = (text, from = ME) => post({ secret: SECRET, kind: "update", update: { update_id: uid++, message: { chat: { id: from, type: "private" }, from: { id: from }, text } } });
-const cb = (data, from = ME) => post({ secret: SECRET, kind: "update", update: { update_id: uid++, callback_query: { id: "q" + uid, from: { id: from }, data } } });
+const msg = (text, from = ME, lang = "uk") => post({ secret: SECRET, kind: "update", update: { update_id: uid++, message: { chat: { id: from, type: "private" }, from: { id: from, language_code: lang }, text } } });
+const cb = (data, from = ME) => post({ secret: SECRET, kind: "update", update: { update_id: uid++, callback_query: { id: "q" + uid, from: { id: from, language_code: "uk" }, data } } });
 const tick = () => post({ secret: SECRET, kind: "tick" });
 const api = (method, path, body) => post({ secret: SECRET, kind: "api", uid: ME, method, path, body });
 const lastSend = () => tgCalls.filter((c) => c.method === "sendMessage").at(-1);
@@ -179,10 +179,33 @@ msg("/settings"); console.log(lastSend().p.text);
 msg("/now"); assert.match(lastSend().p.text, /Час віджиматися/);
 msg("hello"); assert.match(lastSend().p.text, /Не зрозумів/);
 
+// ---- English ----
+msg("/lang en"); assert.match(lastSend().p.text, /Language set to English/); assert.match(lastSend().p.text, /push-ups per reminder/);
+assert(tgCalls.some((c) => c.method === "setChatMenuButton" && c.p.chat_id === ME && c.p.menu_button.text === "📊 Stats"));
+msg("/stats"); assert.match(lastSend().p.text, /Stats/); assert.match(lastSend().p.text, /Streak/); console.log(lastSend().p.text);
+msg("/now"); assert.match(lastSend().p.text, /Push-up time/); assert.equal(lastSend().p.reply_markup.inline_keyboard[1][1].text, "❌ Skip");
+msg("/reps 0"); assert.match(lastSend().p.text, /Push-ups: from 1 to 1000/);
+msg("/lang xx"); assert.match(lastSend().p.text, /Choose a language/);
+msg("blah"); assert.match(lastSend().p.text, /Didn't get that/);
+msg("/settings"); assert.match(lastSend().p.text, /language: English/);
+msg("/lang uk"); assert.match(lastSend().p.text, /українську/);
+// new user: language from Telegram (en by default, uk for Ukrainian clients)
+msg("/start", 444, "en-GB"); assert.match(lastSend().p.text, /Hi! I'll remind you/);
+msg("/start", 444, "uk"); assert.doesNotMatch(lastSend().p.text, /Привіт/, "existing user keeps chosen lang");
+assert.match(lastSend().p.text, /Settings/);
+// existing user without a language (older sheet) gets it from Telegram on the next message
+{ const row = sheets.Users.data.find((r) => r[0] === 444); row[10] = ""; }
+msg("/settings", 444, "uk"); assert.match(lastSend().p.text, /Налаштування/);
+assert.equal(sheets.Users.data[0][10], "lang");
+
 // API
 let r = api("GET", "/state"); assert.equal(r.status, 200);
 console.log("today", JSON.stringify(r.body.stats.today), "streak", r.body.stats.streak, "recent", r.body.recent.length, "heat", r.body.stats.heatmap.length, "rate", r.body.stats.completion_rate);
 assert.equal(r.body.stats.today.done, 15 + 22 + 30);
+r = api("PUT", "/settings", { lang: "en" }); assert.equal(r.body.settings.lang, "en"); assert.match(r.body.stats.next_reminder || "today", /today|tomorrow|\//);
+assert.equal(api("PUT", "/settings", { start_time: "23:00" }).body.detail, "Start must be earlier than end");
+assert.equal(api("PUT", "/settings", { lang: "de" }).status, 400);
+api("PUT", "/settings", { lang: "uk" });
 r = api("PUT", "/settings", { reps: 25, start_time: "08:00", end_time: "22:00", interval_min: 45, days: "1234567", tz: "Europe/London", enabled: true });
 assert.equal(r.status, 200); assert.equal(r.body.settings.reps, 25); assert.equal(r.body.settings.interval_min, 45);
 assert.equal(api("PUT", "/settings", { start_time: "23:00" }).status, 400);
@@ -199,7 +222,7 @@ assert.equal(api("GET", "/state").status, 200);
 
 // DST: Europe/London 2027-03-28 springs forward; 09:00 local = 08:00Z
 api("PUT", "/settings", { tz: "Europe/London", start_time: "09:00", end_time: "21:00", interval_min: 60, days: "1234567" });
-at("2027-03-28T08:00:20Z"); const c1 = setsRows().length; tick(); assert.equal(setsRows().length, c1 + 1, "DST 09:00 local slot");
+at("2027-03-28T08:00:20Z"); const c1 = setsRows().length; tick(); assert.equal(setsRows().length, c1 + 2, "DST 09:00 local slot (both users)");
 assert.equal(setsRows().at(-1)[2], "2027-03-28 09:00");
 
 // blocked user
@@ -232,7 +255,7 @@ function initData(id) {
   return new URLSearchParams(p).toString();
 }
 let res = await worker.fetch(new Request("https://pb.test/"), env, wctx);
-assert.equal(res.status, 200); assert.match(await res.text(), /Віджимання/);
+assert.equal(res.status, 200); assert.match(await res.text(), /Pushups/);
 res = await worker.fetch(new Request("https://pb.test/tg", { method: "POST", body: "{}" }), env, wctx);
 assert.equal(res.status, 403);
 res = await worker.fetch(new Request("https://pb.test/tg", { method: "POST", headers: { "X-Telegram-Bot-Api-Secret-Token": SECRET },

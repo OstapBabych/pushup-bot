@@ -16,6 +16,7 @@ Telegram-бот, який протягом дня нагадує віджима�
   - **Налаштування** — усе вище без команд.
 - Усе можна робити й командами (див. [Команди бота](#команди-бота)). Просто надіслане число записується як підхід.
 - Дані лежать у твоїй Google Таблиці — можна дивитися, правити, будувати свої графіки.
+- 🌐 Українська та англійська: мова визначається автоматично і перемикається будь-коли.
 
 ## Як це влаштовано
 
@@ -93,9 +94,9 @@ wrangler.toml            конфіг для деплою Worker'а з терм�
 5. Поверніться до редактора (`<>` ліворуч). Угорі у списку функцій обери **`setup`** → **Run**.
    - Google попросить дозвіл: **Review permissions** → обери акаунт → «Google hasn't verified this app» → **Advanced** → **Go to … (unsafe)** → **Allow**. Це твій власний скрипт, тому таке попередження нормальне.
    - У журналі (Execution log) з'явиться рядок
-     `🔑 SECRET (встав його у Cloudflare Worker як змінну SECRET): 3f2a…`
+     `🔑 SECRET (put it into the Cloudflare Worker as the SECRET variable): 3f2a…`
      **Скопіюй цей SECRET** — він знадобиться на кроці 4. (Він також збережений у Script Properties.)
-   - Далі буде `✅ Готово! Напиши боту /start`. Також у Таблиці з'являться аркуші `Users` і `Sets`.
+   - Далі буде `✅ Done! Send /start to your bot`. Також у Таблиці з'являться аркуші `Users` і `Sets`.
 6. **Deploy → New deployment** → біля «Select type» натисни ⚙️ → **Web app**:
    - **Execute as:** Me
    - **Who has access:** **Anyone** (саме «Anyone», не «Anyone with Google account»)
@@ -142,7 +143,15 @@ wrangler.toml            конфіг для деплою Worker'а з терм�
 | `/every 60` | інтервал у хвилинах (5–720) |
 | `/days 12345` | дні тижня: 1 = Пн … 7 = Нд |
 | `/tz Europe/Kyiv` | часовий пояс ([список](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)) |
+| `/lang uk`, `/lang en` | мова бота й міні-аппу |
 | `/pause`, `/resume` | вимкнути / увімкнути нагадування |
+
+## Мови
+
+- Новий користувач отримує **українську**, якщо Telegram у нього українською, інакше **англійську**.
+- Змінити будь-коли: `/lang uk` / `/lang en` або **Налаштування → Мова** в міні-аппі. Повідомлення, кнопки, кнопка меню «📊» і міні-апп перемикаються разом.
+- Меню команд (список «/») показується мовою самого застосунку Telegram.
+- Додати ще одну мову: скопіюй блок `en` в `I18N` у `apps-script/Code.gs` і `webapp/index.html`, переклади і додай код мови в `LANGS`.
 
 ## Як працюють нагадування
 
@@ -154,7 +163,7 @@ wrangler.toml            конфіг для деплою Worker'а з терм�
 
 ## Таблиця (база даних)
 
-**`Users`** — налаштування: `chat_id, reps, start_time, end_time, interval_min, days, tz, enabled, last_slot, created_at`.
+**`Users`** — налаштування: `chat_id, reps, start_time, end_time, interval_min, days, tz, enabled, last_slot, created_at, lang`.
 
 **`Sets`** — кожен підхід окремим рядком:
 
@@ -188,6 +197,10 @@ npx wrangler secret put ALLOWED_USER_IDS
 npm run deploy           # збирає worker.js і деплоїть разом із cron із wrangler.toml
 ```
 
+### Оновлення вже встановленого бота
+
+Встав новий `apps-script/Code.gs` → **New version**, і новий `worker/worker.js` → **Deploy**. Дані лишаються: нові колонки (напр. `lang`) додаються в Таблицю автоматично. Запусти `setup` ще раз, щоб з'явилось двомовне меню команд.
+
 ### Розробка й тести
 
 ```bash
@@ -207,7 +220,7 @@ npm test        # тести: розклад, кнопки, команди, API,
 | `last_error_message: 403` | `SECRET` у Worker'і не збігається з `SECRET` у Script Properties. |
 | `/health` → помилка Apps Script | Перевір `GAS_URL` (має закінчуватись на `/exec`) і що в деплої «Who has access: **Anyone**». Також `SECRET` має збігатися. |
 | Міні-апп відкривається, але порожній / налаштування порожні | Worker відповідає `401` — неправильний `BOT_TOKEN` у змінних Worker'а (зайвий пробіл, перенос рядка, інша назва). Перевстав його. |
-| Міні-апп: «Немає доступу» | Твого id немає в `ALLOWED_USER_IDS` у Worker'і. |
+| Міні-апп: «Немає доступу» / «Access denied» | Твого id немає в `ALLOWED_USER_IDS` у Worker'і. |
 | Змінив код, а бот поводиться по-старому | Не зроблено **New version** у Manage deployments (див. «Оновлення коду»). |
 | Немає кнопки «📊 Статистика» | Закрий і знову відкрий чат. Кнопку ставить `setup`, тож запусти його ще раз, якщо міняв `WEBAPP_URL`. |
 | Нагадування не приходять | Перевір Cron Trigger у Worker'і (`* * * * *`), що нагадування не на паузі (`/settings`) і що зараз вибраний день і проміжок часу. |

@@ -5,7 +5,7 @@
 A Telegram bot that reminds you to do push-ups throughout the day, plus a Telegram Mini App with stats and settings.
 Runs **24/7 for free** with no server of your own: Cloudflare Workers + Google Apps Script, with a plain Google Sheet as the database.
 
-> The bot's messages and the Mini App interface are in Ukrainian.
+> 🌐 The bot and the Mini App speak **English** and **Ukrainian**. The language is picked automatically from your Telegram language and can be changed with `/lang` or in the Mini App settings.
 
 ## Features
 
@@ -18,6 +18,7 @@ Runs **24/7 for free** with no server of your own: Cloudflare Workers + Google A
   - **Settings**: everything above without typing commands.
 - Everything also works with commands (see [Bot commands](#bot-commands)). Sending a plain number logs it as a set.
 - Your data lives in your own Google Sheet, so you can view it, edit it and build your own charts.
+- 🌐 English and Ukrainian: chosen automatically, switchable any time.
 
 ## How it works
 
@@ -95,9 +96,9 @@ You'll add the variables in step 4, once you have the Apps Script URL.
 5. Go back to the editor (`<>` on the left). In the function dropdown at the top, select **`setup`** → **Run**.
    - Google will ask for permission: **Review permissions** → choose your account → "Google hasn't verified this app" → **Advanced** → **Go to … (unsafe)** → **Allow**. It's your own script, so this warning is expected.
    - The Execution log shows a line
-     `🔑 SECRET (встав його у Cloudflare Worker як змінну SECRET): 3f2a…`
+     `🔑 SECRET (put it into the Cloudflare Worker as the SECRET variable): 3f2a…`
      **Copy that SECRET**: you'll need it in step 4. (It's also saved in Script Properties.)
-   - Then `✅ Готово! Напиши боту /start` ("Done! Send /start to the bot"). The `Users` and `Sets` tabs appear in your sheet.
+   - Then `✅ Done! Send /start to your bot`. The `Users` and `Sets` tabs appear in your sheet.
 6. **Deploy → New deployment** → click ⚙️ next to "Select type" → **Web app**:
    - **Execute as:** Me
    - **Who has access:** **Anyone** (exactly "Anyone", not "Anyone with Google account")
@@ -123,8 +124,8 @@ You'll add the variables in step 4, once you have the Apps Script URL.
 1. Open `https://pushup-bot.your-name.workers.dev/health` in a browser. You should see
    `{"worker":"ok","apps_script":"ok"}`.
 2. Send `/start` to your bot in Telegram. You'll get a welcome message with your settings.
-3. Send `/now`. A reminder with buttons arrives. Tap **✅ Зробив** (Done): a row with status `done` appears in the `Sets` tab of your sheet.
-4. Close and reopen the chat with the bot. A **📊 Статистика** (Stats) button appears next to the message box: that's the Mini App.
+3. Send `/now`. A reminder with buttons arrives. Tap **✅ Done**: a row with status `done` appears in the `Sets` tab of your sheet.
+4. Close and reopen the chat with the bot. A **📊 Stats** button appears next to the message box: that's the Mini App.
 
 Done 🎉 Set your schedule in the Mini App (⚙️ tab) or with commands.
 
@@ -143,8 +144,16 @@ Done 🎉 Set your schedule in the Mini App (⚙️ tab) or with commands.
 | `/hours 9-21` | active hours (also `9:30-21:15`) |
 | `/every 60` | interval in minutes (5–720) |
 | `/days 12345` | days of the week: 1 = Mon … 7 = Sun |
-| `/tz Europe/Kyiv` | time zone ([list](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)) |
+| `/tz Europe/London` | time zone ([list](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)) |
+| `/lang en`, `/lang uk` | bot and Mini App language |
 | `/pause`, `/resume` | turn reminders off / on |
+
+## Languages
+
+- A new user gets **Ukrainian** if their Telegram app is in Ukrainian, otherwise **English**.
+- Switch any time: `/lang en` / `/lang uk`, or **Settings → Language** in the Mini App. The bot's messages, buttons, the "📊" menu button and the Mini App all follow the chosen language.
+- The command menu (the "/" list) follows the language of the Telegram app itself.
+- Adding another language: copy the `en` block in `I18N` in `apps-script/Code.gs` and in `webapp/index.html`, translate it and add the code to `LANGS`.
 
 ## How reminders work
 
@@ -156,7 +165,7 @@ Done 🎉 Set your schedule in the Mini App (⚙️ tab) or with commands.
 
 ## The sheet (database)
 
-**`Users`**: settings: `chat_id, reps, start_time, end_time, interval_min, days, tz, enabled, last_slot, created_at`.
+**`Users`**: settings: `chat_id, reps, start_time, end_time, interval_min, days, tz, enabled, last_slot, created_at, lang`.
 
 **`Sets`**: one row per set:
 
@@ -190,6 +199,10 @@ npx wrangler secret put ALLOWED_USER_IDS
 npm run deploy           # builds worker.js and deploys it together with the cron from wrangler.toml
 ```
 
+### Upgrading an existing installation
+
+Paste the new `apps-script/Code.gs` → **New version** deploy, and paste the new `worker/worker.js` → **Deploy**. Your data stays as it is: new columns (e.g. `lang`) are added to the sheet automatically. Run `setup` once more to get the bilingual command menu.
+
 ### Development and tests
 
 ```bash
@@ -209,9 +222,9 @@ Only Node.js 18+ is needed; there are no dependencies.
 | `last_error_message: 403` | `SECRET` in the Worker doesn't match `SECRET` in Script Properties. |
 | `/health` shows an Apps Script error | Check `GAS_URL` (must end with `/exec`) and that the deployment has "Who has access: **Anyone**". `SECRET` must match too. |
 | The Mini App opens but is empty / settings are blank | The Worker returns `401`: wrong `BOT_TOKEN` in the Worker variables (extra space, line break, wrong name). Re-enter it. |
-| Mini App says "Немає доступу" (no access) | Your id isn't in the Worker's `ALLOWED_USER_IDS`. |
+| Mini App says "Access denied" | Your id isn't in the Worker's `ALLOWED_USER_IDS`. |
 | You changed the code but the bot behaves the old way | You didn't create a **New version** in Manage deployments (see "Updating the code"). |
-| No "📊 Статистика" button | Close and reopen the chat. `setup` sets the button, so run it again if you changed `WEBAPP_URL`. |
+| No "📊 Stats" button | Close and reopen the chat. `setup` sets the button, so run it again if you changed `WEBAPP_URL`. |
 | Reminders don't arrive | Check the Worker's Cron Trigger (`* * * * *`), that reminders aren't paused (`/settings`), and that today and the current time are inside your schedule. |
 | Cloudflare says "This uploader does not yet support projects that require a build process" | You're in "Upload and deploy" mode. Use **Start with Hello World!** → **Edit code** instead (step 2). |
 

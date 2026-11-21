@@ -1,15 +1,15 @@
 /**
  * 💪 Pushup Bot — Cloudflare Worker
- *  /tg      ← вебхук Telegram: одразу відповідає 200, а апдейт у фоні передає в Apps Script
- *  /api/*   ← API міні-аппу: перевіряє підпис Telegram initData і проксіює в Apps Script
- *  /        ← сам міні-апп (HTML вбудований нижче)
- *  cron     → щохвилини «tick» в Apps Script (надіслати нагадування)
+ *  /tg      ← Telegram webhook: replies 200 immediately, forwards the update to Apps Script in the background
+ *  /api/*   ← Mini App API: verifies the Telegram initData signature and proxies to Apps Script
+ *  /        ← the Mini App itself (HTML is bundled below by scripts/build.mjs)
+ *  cron     → "tick" in Apps Script every minute (sends reminders)
  *
- * Змінні (Settings → Variables and Secrets):
- *   BOT_TOKEN  (Secret)  — токен бота
- *   SECRET     (Secret)  — той самий, що SECRET у Code.gs
- *   GAS_URL    (Text)    — https://script.google.com/macros/s/…/exec
- *   ALLOWED_USER_IDS (Text, необов'язково) — напр. 111222333
+ * Variables (Settings → Variables and Secrets):
+ *   BOT_TOKEN  (Secret)  — bot token
+ *   SECRET     (Secret)  — same as SECRET in Apps Script Script Properties
+ *   GAS_URL    (Secret or Text) — https://script.google.com/macros/s/…/exec
+ *   ALLOWED_USER_IDS (Text, optional) — e.g. 111222333
  */
 
 const HTML = __HTML__;
@@ -30,15 +30,17 @@ export default {
     }
 
     if (url.pathname.startsWith("/api/")) {
-      const uid = await validateInitData(request.headers.get("X-Init-Data") || "", env.BOT_TOKEN);
-      if (!uid) return json({ detail: "Відкрий міні-апп через Telegram" }, 401);
-      const allowed = String(env.ALLOWED_USER_IDS || "").split(",").map((s) => s.trim()).filter(Boolean);
-      if (allowed.length && !allowed.includes(String(uid))) return json({ detail: "Немає доступу" }, 403);
+      const user = await validateInitData(request.headers.get("X-Init-Data") || "", env.BOT_TOKEN);
+      if (!user) return json({ detail: "Open the Mini App from Telegram", code: "unauthorized" }, 401);
+      const allowed = env.ALLOWED_USER_IDS.split(",").map((s) => s.trim()).filter(Boolean);
+      if (allowed.length && !allowed.includes(String(user.id))) return json({ detail: "Access denied", code: "forbidden" }, 403);
       let body = null;
       if (request.method === "POST" || request.method === "PUT" || request.method === "PATCH") {
         body = await request.json().catch(() => ({}));
       }
-      const res = await callGas(env, { kind: "api", uid, method: request.method, path: url.pathname.slice(4), body });
+      const res = await callGas(env, {
+        kind: "api", uid: user.id, lang: user.language_code || "", method: request.method, path: url.pathname.slice(4), body,
+      });
       return json(res.body, res.status || 200);
     }
 
@@ -58,6 +60,7 @@ export default {
   },
 };
 
+/** Trims accidental spaces / line breaks from pasted variable values. */
 function cleanEnv(env) {
   const out = {};
   for (const k of ["BOT_TOKEN", "SECRET", "GAS_URL", "ALLOWED_USER_IDS"]) out[k] = String(env[k] || "").trim();
@@ -77,11 +80,11 @@ async function callGas(env, payload) {
       return JSON.parse(text);
     } catch {
       console.log("Apps Script returned non-JSON:", r.status, text.slice(0, 300));
-      return { status: 502, body: { detail: "Apps Script не відповів як треба. Перевір GAS_URL і доступ «Anyone»." } };
+      return { status: 502, body: { detail: "Apps Script returned an unexpected response. Check GAS_URL and that access is set to \"Anyone\"." } };
     }
   } catch (e) {
     console.log("Apps Script fetch failed:", e && e.message);
-    return { status: 502, body: { detail: "Не вдалось достукатись до Apps Script" } };
+    return { status: 502, body: { detail: "Could not reach Apps Script" } };
   }
 }
 
@@ -92,7 +95,7 @@ async function hmac(key, data) {
   return new Uint8Array(await crypto.subtle.sign("HMAC", k, typeof data === "string" ? enc.encode(data) : data));
 }
 
-/** Перевірка підпису Telegram WebApp initData. Повертає user id або null. */
+/** Verifies Telegram WebApp initData. Returns the Telegram user object or null. */
 async function validateInitData(initData, token) {
   if (!initData || !token) return null;
   const params = new URLSearchParams(initData);
@@ -105,7 +108,8 @@ async function validateInitData(initData, token) {
   if (calc !== hash) return null;
   if (Date.now() / 1000 - Number(params.get("auth_date") || 0) > 7 * 24 * 3600) return null;
   try {
-    return JSON.parse(params.get("user")).id;
+    const user = JSON.parse(params.get("user"));
+    return user && user.id ? user : null;
   } catch {
     return null;
   }

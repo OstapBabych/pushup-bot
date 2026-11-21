@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="uk">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Віджимання</title>
+<title>Pushups</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
@@ -99,9 +99,9 @@
 </head>
 <body>
 
-<div id="noTg" class="empty hidden">Відкрий цей застосунок через бота в Telegram 🙂</div>
+<div id="noTg" class="empty hidden" data-i18n="noTg"></div>
 
-<!-- ============ СТАТИСТИКА ============ -->
+<!-- ============ STATS ============ -->
 <section id="tab-stats">
   <div class="card hero">
     <div class="ring">
@@ -111,60 +111,60 @@
                 stroke-linecap="round" stroke-dasharray="301.6" stroke-dashoffset="301.6"
                 style="transition: stroke-dashoffset .6s"/>
       </svg>
-      <div class="val"><div class="big" id="todayDone">0</div><div class="muted" id="todayGoal">з 0</div></div>
+      <div class="val"><div class="big" id="todayDone">0</div><div class="muted" id="todayGoal"></div></div>
     </div>
     <div>
-      <div style="font-weight:700;font-size:17px" id="todayMsg">Сьогодні</div>
+      <div style="font-weight:700;font-size:17px" id="todayMsg"></div>
       <div class="muted" id="nextRem"></div>
       <div class="chips" id="todayChips"></div>
     </div>
   </div>
 
   <div class="tiles">
-    <div class="tile"><div class="v" id="streak">0</div><div class="l">🔥 серія днів · рекорд <span id="bestStreak">0</span></div></div>
-    <div class="tile"><div class="v" id="rate">—</div><div class="l">🎯 виконано нагадувань (30 дн)</div></div>
-    <div class="tile"><div class="v" id="week">0</div><div class="l">за 7 днів</div></div>
-    <div class="tile"><div class="v" id="month">0</div><div class="l">за 30 днів</div></div>
-    <div class="tile"><div class="v" id="total">0</div><div class="l">всього</div></div>
-    <div class="tile"><div class="v" id="bestDay">—</div><div class="l" id="bestDayL">🏆 найкращий день</div></div>
+    <div class="tile"><div class="v" id="streak">0</div><div class="l"><span data-i18n="tileStreak"></span> <span id="bestStreak">0</span></div></div>
+    <div class="tile"><div class="v" id="rate">—</div><div class="l" data-i18n="tileRate"></div></div>
+    <div class="tile"><div class="v" id="week">0</div><div class="l" data-i18n="tileWeek"></div></div>
+    <div class="tile"><div class="v" id="month">0</div><div class="l" data-i18n="tileMonth"></div></div>
+    <div class="tile"><div class="v" id="total">0</div><div class="l" data-i18n="tileTotal"></div></div>
+    <div class="tile"><div class="v" id="bestDay">—</div><div class="l" id="bestDayL"></div></div>
   </div>
 
-  <h2>Останні 30 днів</h2>
+  <h2 data-i18n="h30"></h2>
   <div class="card"><canvas id="chartDays" height="190"></canvas></div>
 
-  <h2>Активність</h2>
+  <h2 data-i18n="hActivity"></h2>
   <div class="card">
     <div class="heat" id="heat"></div>
-    <div class="legend muted">менше <i style="background:var(--bg)"></i><i data-l="1"></i><i data-l="2"></i><i data-l="3"></i><i data-l="4"></i> більше</div>
+    <div class="legend muted"><span data-i18n="less"></span> <i style="background:var(--bg)"></i><i data-l="1"></i><i data-l="2"></i><i data-l="3"></i><i data-l="4"></i> <span data-i18n="more"></span></div>
   </div>
 
-  <h2>По годинах (30 днів)</h2>
+  <h2 data-i18n="hHours"></h2>
   <div class="card"><canvas id="chartHours" height="150"></canvas></div>
 </section>
 
-<!-- ============ ІСТОРІЯ ============ -->
+<!-- ============ HISTORY ============ -->
 <section id="tab-history" class="hidden">
   <div class="card">
     <div class="row">
-      <input id="addNum" type="number" inputmode="numeric" min="1" max="1000" placeholder="Скільки зробив?">
-      <button id="addBtn" style="white-space:nowrap">+ Додати</button>
+      <input id="addNum" type="number" inputmode="numeric" min="1" max="1000" data-i18n-ph="addPh">
+      <button id="addBtn" style="white-space:nowrap" data-i18n="addBtn"></button>
     </div>
-    <div class="muted" style="font-size:13px;margin-top:6px">Записати підхід поза розкладом</div>
+    <div class="muted" style="font-size:13px;margin-top:6px" data-i18n="addHint"></div>
   </div>
   <div id="history"></div>
 </section>
 
-<!-- ============ НАЛАШТУВАННЯ ============ -->
+<!-- ============ SETTINGS ============ -->
 <section id="tab-settings" class="hidden">
   <div class="card">
     <div class="row between">
-      <div><div style="font-weight:600">Нагадування</div><div class="muted" style="font-size:13px" id="enabledHint"></div></div>
+      <div><div style="font-weight:600" data-i18n="reminders"></div><div class="muted" style="font-size:13px" id="enabledHint"></div></div>
       <label class="switch"><input type="checkbox" id="sEnabled"><span></span></label>
     </div>
   </div>
   <div class="card">
     <div class="field">
-      <label>Віджимань за раз</label>
+      <label data-i18n="perSet"></label>
       <div class="stepper">
         <button class="ghost" data-step="-5">−</button>
         <input id="sReps" type="number" inputmode="numeric" min="1" max="1000">
@@ -172,36 +172,34 @@
       </div>
     </div>
     <div class="field two">
-      <div><label>З</label><input id="sStart" type="time"></div>
-      <div><label>До</label><input id="sEnd" type="time"></div>
+      <div><label data-i18n="from"></label><input id="sStart" type="time"></div>
+      <div><label data-i18n="to"></label><input id="sEnd" type="time"></div>
     </div>
     <div class="field">
-      <label>Як часто</label>
-      <select id="sInterval">
-        <option value="15">кожні 15 хв</option><option value="20">кожні 20 хв</option>
-        <option value="30">кожні 30 хв</option><option value="45">кожні 45 хв</option>
-        <option value="60">щогодини</option><option value="90">кожні 1,5 год</option>
-        <option value="120">кожні 2 год</option><option value="180">кожні 3 год</option>
-        <option value="240">кожні 4 год</option>
-      </select>
+      <label data-i18n="howOften"></label>
+      <select id="sInterval"></select>
     </div>
     <div class="field">
-      <label>Дні</label>
+      <label data-i18n="daysL"></label>
       <div class="days" id="sDays"></div>
     </div>
     <div class="field">
-      <label>Часовий пояс</label>
+      <label data-i18n="tzL"></label>
       <select id="sTz"></select>
+    </div>
+    <div class="field">
+      <label data-i18n="langL"></label>
+      <select id="sLang"><option value="en">English</option><option value="uk">Українська</option></select>
     </div>
   </div>
   <div class="preview" id="preview"></div>
-  <button class="wide" id="saveBtn">Зберегти</button>
+  <button class="wide" id="saveBtn" data-i18n="save"></button>
 </section>
 
 <nav>
-  <button data-tab="stats" class="active"><b>📊</b>Статистика</button>
-  <button data-tab="history"><b>📜</b>Історія</button>
-  <button data-tab="settings"><b>⚙️</b>Налаштування</button>
+  <button data-tab="stats" class="active"><b>📊</b><span data-i18n="navStats"></span></button>
+  <button data-tab="history"><b>📜</b><span data-i18n="navHistory"></span></button>
+  <button data-tab="settings"><b>⚙️</b><span data-i18n="navSettings"></span></button>
 </nav>
 <div id="toast"></div>
 
@@ -210,23 +208,85 @@ const tg = window.Telegram?.WebApp;
 tg?.ready(); tg?.expand();
 const INIT = tg?.initData || "";
 const $ = (id) => document.getElementById(id);
-const DAY = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
-const MONTHS = ["січ", "лют", "бер", "кві", "тра", "чер", "лип", "сер", "вер", "жов", "лис", "гру"];
 const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 let S = null, charts = {}, openEditor = null;
 
+/* ---------- i18n ---------- */
+const I18N = {
+  en: {
+    noTg: "Open this app from the bot in Telegram 🙂",
+    of: (n) => `of ${n}`, restDay: "rest day", restMsg: "Rest day today 😌", goalDone: "Goal reached 🎉",
+    left: (n) => `${n} to go`, next: (s) => `Next: ${s}`, paused: "⏸ Reminders paused",
+    tileStreak: "🔥 day streak · best", tileRate: "🎯 reminders done (30 days)", tileWeek: "last 7 days", tileMonth: "last 30 days",
+    tileTotal: "all time", bestDay: "🏆 best day", bestDayOn: (d) => `🏆 best day · ${d}`,
+    h30: "Last 30 days", hActivity: "Activity", hHours: "By hour (30 days)", less: "less", more: "more",
+    dsDone: "Done", dsGoal: "Goal",
+    addPh: "How many did you do?", addBtn: "+ Add", addHint: "Log a set outside the schedule",
+    empty: "Nothing here yet. Your first reminder is coming soon 💪", todayW: "Today",
+    pushups: (n) => `${n} push-up${n === 1 ? "" : "s"}`, manual: "manual", waiting: "waiting for answer", plan: (n) => `plan ${n}`,
+    saved: "Saved", deleted: "Deleted", enterNum: "Enter a number", logged: (n) => `Logged ${n} 💪`, confirmDel: "Delete this set?",
+    reminders: "Reminders", on: "On", off: "Paused", perSet: "Push-ups per reminder", from: "From", to: "To", howOften: "How often",
+    daysL: "Days", tzL: "Time zone", langL: "Language", save: "Save",
+    every: (m) => m === 60 ? "every hour" : m % 60 === 0 ? `every ${m / 60} hours` : m > 60 ? `every ${m / 60} hours` : `every ${m} min`,
+    preview: (t, total, d) => `${t} reminder${t === 1 ? "" : "s"} a day · ${total} push-ups · ${d} day${d === 1 ? "" : "s"} a week`,
+    orderErr: "Start must be earlier than end", pickDay: "Pick at least one day",
+    navStats: "Stats", navHistory: "History", navSettings: "Settings",
+    err: (s) => `Error ${s}`, unauthorized: "Open the Mini App from Telegram", forbidden: "Access denied",
+    days: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    fmtDate: (d, m, L) => `${L.months[m - 1]} ${d}`,
+  },
+  uk: {
+    noTg: "Відкрий цей застосунок через бота в Telegram 🙂",
+    of: (n) => `з ${n}`, restDay: "вихідний", restMsg: "Сьогодні вихідний 😌", goalDone: "Ціль виконана 🎉",
+    left: (n) => `Ще ${n} до цілі`, next: (s) => `Наступне: ${s}`, paused: "⏸ Нагадування на паузі",
+    tileStreak: "🔥 серія днів · рекорд", tileRate: "🎯 виконано нагадувань (30 дн)", tileWeek: "за 7 днів", tileMonth: "за 30 днів",
+    tileTotal: "всього", bestDay: "🏆 рекорд за день", bestDayOn: (d) => `🏆 рекорд за день · ${d}`,
+    h30: "Останні 30 днів", hActivity: "Активність", hHours: "По годинах (30 днів)", less: "менше", more: "більше",
+    dsDone: "Зроблено", dsGoal: "Ціль",
+    addPh: "Скільки зробив?", addBtn: "+ Додати", addHint: "Записати підхід поза розкладом",
+    empty: "Ще нічого немає. Перше нагадування вже скоро 💪", todayW: "Сьогодні",
+    pushups: (n) => `${n} ${ukPlural(n, "віджимання", "віджимання", "віджимань")}`, manual: "вручну", waiting: "чекає відповіді", plan: (n) => `план ${n}`,
+    saved: "Збережено", deleted: "Видалено", enterNum: "Введи число", logged: (n) => `Записав ${n} 💪`, confirmDel: "Видалити цей підхід?",
+    reminders: "Нагадування", on: "Увімкнені", off: "На паузі", perSet: "Віджимань за раз", from: "З", to: "До", howOften: "Як часто",
+    daysL: "Дні", tzL: "Часовий пояс", langL: "Мова", save: "Зберегти",
+    every: (m) => m === 60 ? "щогодини" : m > 60 ? `кожні ${String(m / 60).replace(".", ",")} год` : `кожні ${m} хв`,
+    preview: (t, total, d) => `${t} ${ukPlural(t, "нагадування", "нагадування", "нагадувань")} на день · ${total} ${ukPlural(total, "віджимання", "віджимання", "віджимань")} · ${d} ${ukPlural(d, "день", "дні", "днів")} на тиждень`,
+    orderErr: "Початок має бути раніше за кінець", pickDay: "Обери хоча б один день",
+    navStats: "Статистика", navHistory: "Історія", navSettings: "Налаштування",
+    err: (s) => `Помилка ${s}`, unauthorized: "Відкрий міні-апп через Telegram", forbidden: "Немає доступу",
+    days: ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"],
+    months: ["січ", "лют", "бер", "кві", "тра", "чер", "лип", "сер", "вер", "жов", "лис", "гру"],
+    fmtDate: (d, m, L) => `${d} ${L.months[m - 1]}`,
+  },
+};
+function ukPlural(n, a, b, c) { n = Math.abs(n) % 100; const n1 = n % 10; if (n > 10 && n < 20) return c; if (n1 > 1 && n1 < 5) return b; if (n1 === 1) return a; return c; }
+let LANG = /^uk/i.test(tg?.initDataUnsafe?.user?.language_code || navigator.language || "") ? "uk" : "en";
+const T = () => I18N[LANG] || I18N.en;
+function applyStatic() {
+  document.documentElement.lang = LANG;
+  document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = T()[el.dataset.i18n]; });
+  document.querySelectorAll("[data-i18n-ph]").forEach((el) => { el.placeholder = T()[el.dataset.i18nPh]; });
+  const cur = $("sInterval").value;
+  $("sInterval").innerHTML = [15, 20, 30, 45, 60, 90, 120, 180, 240].map((m) => `<option value="${m}">${T().every(m)}</option>`).join("");
+  if (cur) $("sInterval").value = cur;
+}
+function setLang(l) { if (I18N[l] && l !== LANG) { LANG = l; applyStatic(); } }
+
 function haptic(type = "light") { tg?.HapticFeedback?.impactOccurred?.(type); }
 function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2000); }
-function fmtDate(iso) { const [y, m, d] = iso.split("-"); return `${+d} ${MONTHS[+m - 1]}`; }
-function plural(n, a, b, c) { n = Math.abs(n) % 100; const n1 = n % 10; if (n > 10 && n < 20) return c; if (n1 > 1 && n1 < 5) return b; if (n1 === 1) return a; return c; }
+function fmtDate(iso) { const [, m, d] = iso.split("-"); return T().fmtDate(+d, +m, T()); }
 
 async function api(path, opts = {}) {
   const r = await fetch(path, { ...opts, headers: { "Content-Type": "application/json", "X-Init-Data": INIT } });
-  if (!r.ok) { let msg = "Помилка " + r.status; try { msg = (await r.json()).detail || msg; } catch {} throw new Error(msg); }
+  if (!r.ok) {
+    let j = {}; try { j = await r.json(); } catch {}
+    throw new Error(r.status === 401 ? T().unauthorized : r.status === 403 ? T().forbidden : j.detail || T().err(r.status));
+  }
   return r.json();
 }
 async function load() {
-  try { S = await api("/api/state"); render(); }
+  try { S = await api("/api/state"); setLang(S.settings.lang); render(); }
   catch (e) { toast(e.message); }
 }
 
@@ -237,18 +297,21 @@ document.querySelectorAll("nav button").forEach((b) => b.onclick = () => {
   haptic("soft"); window.scrollTo(0, 0);
 });
 
-function render() { renderStats(); renderHistory(); renderSettings(); }
+function render() {
+  // each part separately, so one failure doesn't leave the other tabs empty
+  for (const f of [renderSettings, renderHistory, renderStats]) { try { f(); } catch (e) { console.error(e); } }
+}
 
 /* ---------- stats ---------- */
 function renderStats() {
-  const st = S.stats, t = st.today;
+  const st = S.stats, t = st.today, L = T();
   $("todayDone").textContent = t.done;
-  $("todayGoal").textContent = t.goal ? `з ${t.goal}` : "вихідний";
+  $("todayGoal").textContent = t.goal ? L.of(t.goal) : L.restDay;
   const pct = t.goal ? Math.min(1, t.done / t.goal) : (t.done ? 1 : 0);
   $("ringArc").style.strokeDashoffset = 301.6 * (1 - pct);
   $("ringArc").style.stroke = pct >= 1 ? "var(--ok)" : "var(--accent)";
-  $("todayMsg").textContent = !t.goal ? "Сьогодні вихідний 😌" : pct >= 1 ? "Ціль виконана 🎉" : `Ще ${t.goal - t.done} до цілі`;
-  $("nextRem").textContent = S.settings.enabled ? (st.next_reminder ? `Наступне: ${st.next_reminder}` : "") : "⏸ Нагадування на паузі";
+  $("todayMsg").textContent = !t.goal ? L.restMsg : pct >= 1 ? L.goalDone : L.left(t.goal - t.done);
+  $("nextRem").textContent = S.settings.enabled ? (st.next_reminder ? L.next(st.next_reminder) : "") : L.paused;
   const c = t.sets;
   $("todayChips").innerHTML = [["✅", c.done], ["❌", c.skipped], ["😴", c.missed], ["⏳", c.pending]]
     .filter(([, n]) => n).map(([i, n]) => `<span class="chip">${i} ${n}</span>`).join("");
@@ -256,20 +319,28 @@ function renderStats() {
   $("rate").textContent = st.completion_rate == null ? "—" : st.completion_rate + "%";
   $("week").textContent = st.week; $("month").textContent = st.month; $("total").textContent = st.total;
   $("bestDay").textContent = st.best_day ? st.best_day.done : "—";
-  $("bestDayL").textContent = st.best_day ? `🏆 рекорд за день · ${fmtDate(st.best_day.date)}` : "🏆 рекорд за день";
+  $("bestDayL").textContent = st.best_day ? L.bestDayOn(fmtDate(st.best_day.date)) : L.bestDay;
 
+  // heatmap first: it doesn't depend on Chart.js
   const accent = css("--accent") || "#2f80ed", hint = css("--hint") || "#8e8e93", ok = "#34c759";
+  const max = Math.max(1, ...st.heatmap.map((d) => d.done));
+  const lvl = (n) => (n <= 0 ? 0 : Math.min(4, Math.ceil((n / max) * 4)));
+  const shade = (l) => l ? `color-mix(in srgb, ${accent} ${[0, 30, 55, 78, 100][l]}%, transparent)` : "";
+  $("heat").innerHTML = st.heatmap.map((d) => `<div title="${fmtDate(d.date)}: ${d.done}" style="${d.done ? `background:${shade(lvl(d.done))}` : ""}"></div>`).join("");
+  document.querySelectorAll(".legend i[data-l]").forEach((i) => i.style.background = shade(+i.dataset.l));
+
+  if (!window.Chart) return;
   Chart.defaults.color = hint; Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
   const grid = { color: hint + "22" }, noGrid = { display: false };
 
   charts.days?.destroy();
-  charts.days = new Chart($("chartDays"), {
+  charts.days = new Chart(freshCanvas("chartDays", 190), {
     data: {
       labels: st.series.map((d) => fmtDate(d.date)),
       datasets: [
-        { type: "bar", label: "Зроблено", data: st.series.map((d) => d.done), borderRadius: 4,
+        { type: "bar", label: L.dsDone, data: st.series.map((d) => d.done), borderRadius: 4,
           backgroundColor: st.series.map((d) => d.goal && d.done >= d.goal ? ok : accent) },
-        { type: "line", label: "Ціль", data: st.series.map((d) => d.goal), borderColor: hint, borderDash: [4, 4],
+        { type: "line", label: L.dsGoal, data: st.series.map((d) => d.goal), borderColor: hint, borderDash: [4, 4],
           borderWidth: 1.5, pointRadius: 0, stepped: "middle" },
       ],
     },
@@ -282,36 +353,38 @@ function renderStats() {
   const first = Math.max(0, Math.min(...hours.filter((h) => st.hourly[h]).concat([7])) - 1);
   const lastH = Math.min(23, Math.max(...hours.filter((h) => st.hourly[h]).concat([22])) + 1);
   const hs = hours.slice(first, lastH + 1);
-  charts.hours = new Chart($("chartHours"), {
+  charts.hours = new Chart(freshCanvas("chartHours", 150), {
     type: "bar",
     data: { labels: hs.map((h) => h + ":00"), datasets: [{ data: hs.map((h) => st.hourly[h]), backgroundColor: accent, borderRadius: 4 }] },
     options: { plugins: { legend: { display: false } },
       scales: { x: { grid: noGrid, ticks: { maxTicksLimit: 8, maxRotation: 0 } }, y: { beginAtZero: true, grid, border: { display: false } } } },
   });
+}
 
-  // heatmap
-  const max = Math.max(1, ...st.heatmap.map((d) => d.done));
-  const lvl = (n) => (n <= 0 ? 0 : Math.min(4, Math.ceil((n / max) * 4)));
-  const shade = (l) => l ? `color-mix(in srgb, ${accent} ${[0, 30, 55, 78, 100][l]}%, transparent)` : "";
-  $("heat").innerHTML = st.heatmap.map((d) => `<div title="${fmtDate(d.date)}: ${d.done}" style="${d.done ? `background:${shade(lvl(d.done))}` : ""}"></div>`).join("");
-  document.querySelectorAll(".legend i[data-l]").forEach((i) => i.style.background = shade(+i.dataset.l));
+/** A new canvas each time: re-using a destroyed chart's canvas makes Chart.js stretch it. */
+function freshCanvas(id, height) {
+  const old = $(id), c = document.createElement("canvas");
+  c.id = id; c.height = height;
+  old.replaceWith(c);
+  return c;
 }
 
 /* ---------- history ---------- */
 const ICON = { done: "✅", skipped: "❌", missed: "😴", pending: "⏳" };
 function renderHistory() {
-  if (!S.recent.length) { $("history").innerHTML = `<div class="empty">Ще нічого немає. Перше нагадування вже скоро 💪</div>`; return; }
+  const L = T();
+  if (!S.recent.length) { $("history").innerHTML = `<div class="empty">${L.empty}</div>`; return; }
   const groups = {};
   S.recent.forEach((s) => (groups[s.date] ||= []).push(s));
   $("history").innerHTML = Object.entries(groups).map(([date, items]) => {
-    const sum = items.reduce((a, s) => a + s.done, 0);
-    return `<div class="day-head"><span>${date === S.stats.today.date ? "Сьогодні" : fmtDate(date)}</span><span>${sum} ${plural(sum, "віджимання", "віджимання", "віджимань")}</span></div>
+    const sum = items.reduce((a, s) => a + (s.done || 0), 0);
+    return `<div class="day-head"><span>${date === S.stats.today.date ? L.todayW : fmtDate(date)}</span><span>${L.pushups(sum)}</span></div>
       <div class="card" style="padding:0 14px">${items.map((s) => `
         <div class="item" data-id="${s.id}">
-          <div class="ico">${ICON[s.status]}</div>
-          <div class="t"><div>${s.time}${s.source === "manual" ? ' <span class="muted">· вручну</span>' : ""}</div>
-            <div class="muted" style="font-size:13px">${s.status === "pending" ? "чекає відповіді" : s.source === "manual" ? "" : "план " + s.planned}</div></div>
-          <div class="n">${s.done}</div>
+          <div class="ico">${ICON[s.status] || "•"}</div>
+          <div class="t"><div>${s.time}${s.source === "manual" ? ` <span class="muted">· ${L.manual}</span>` : ""}</div>
+            <div class="muted" style="font-size:13px">${s.status === "pending" ? L.waiting : s.source === "manual" ? "" : L.plan(s.planned)}</div></div>
+          <div class="n">${s.done || 0}</div>
         </div>
         <div class="editor hidden" id="ed-${s.id}">
           <input type="number" inputmode="numeric" min="0" max="1000" value="${s.done || s.planned}">
@@ -323,11 +396,11 @@ $("history").addEventListener("click", async (e) => {
   const save = e.target.closest("[data-save]"), del = e.target.closest("[data-del]"), item = e.target.closest(".item");
   if (save) {
     const id = save.dataset.save, v = +$("ed-" + id).querySelector("input").value;
-    try { S = await api(`/api/sets/${id}`, { method: "PATCH", body: JSON.stringify({ done: v }) }); render(); haptic("medium"); toast("Збережено"); }
+    try { S = await api(`/api/sets/${id}`, { method: "PATCH", body: JSON.stringify({ done: v }) }); render(); haptic("medium"); toast(T().saved); }
     catch (err) { toast(err.message); }
   } else if (del) {
-    const go = async () => { try { S = await api(`/api/sets/${del.dataset.del}`, { method: "DELETE" }); render(); toast("Видалено"); } catch (err) { toast(err.message); } };
-    tg?.showConfirm ? tg.showConfirm("Видалити цей підхід?", (ok) => ok && go()) : confirm("Видалити?") && go();
+    const go = async () => { try { S = await api(`/api/sets/${del.dataset.del}`, { method: "DELETE" }); render(); toast(T().deleted); } catch (err) { toast(err.message); } };
+    tg?.showConfirm ? tg.showConfirm(T().confirmDel, (ok) => ok && go()) : confirm(T().confirmDel) && go();
   } else if (item) {
     const ed = $("ed-" + item.dataset.id);
     if (openEditor && openEditor !== ed) openEditor.classList.add("hidden");
@@ -336,8 +409,8 @@ $("history").addEventListener("click", async (e) => {
 });
 $("addBtn").onclick = async () => {
   const n = +$("addNum").value;
-  if (!n || n < 1) return toast("Введи число");
-  try { S = await api("/api/sets", { method: "POST", body: JSON.stringify({ done: n }) }); $("addNum").value = ""; render(); haptic("medium"); toast(`Записав ${n} 💪`); }
+  if (!n || n < 1) return toast(T().enterNum);
+  try { S = await api("/api/sets", { method: "POST", body: JSON.stringify({ done: n }) }); $("addNum").value = ""; render(); haptic("medium"); toast(T().logged(n)); }
   catch (e) { toast(e.message); }
 };
 
@@ -351,32 +424,40 @@ function tzList(current) {
   return [...new Set([current, local, ...list])].filter(Boolean);
 }
 function renderSettings() {
-  const s = S.settings;
-  $("sEnabled").checked = s.enabled;
+  const s = S.settings, L = T();
+  $("sEnabled").checked = !!s.enabled;
   $("sReps").value = s.reps; $("sStart").value = s.start_time; $("sEnd").value = s.end_time;
-  if (![...$("sInterval").options].some((o) => +o.value === s.interval_min))
-    $("sInterval").add(new Option(`кожні ${s.interval_min} хв`, s.interval_min));
+  if (![...$("sInterval").options].some((o) => +o.value === +s.interval_min))
+    $("sInterval").add(new Option(L.every(+s.interval_min), s.interval_min));
   $("sInterval").value = s.interval_min;
-  draftDays = s.days;
-  $("sDays").innerHTML = DAY.map((d, i) => `<button data-d="${i + 1}" class="${s.days.includes(i + 1) ? "on" : ""}">${d}</button>`).join("");
+  $("sLang").value = s.lang || LANG;
+  draftDays = String(s.days || "");
+  $("sDays").innerHTML = L.days.map((d, i) => `<button data-d="${i + 1}" class="${draftDays.includes(String(i + 1)) ? "on" : ""}">${d}</button>`).join("");
   $("sTz").innerHTML = tzList(s.tz).map((z) => `<option ${z === s.tz ? "selected" : ""}>${z}</option>`).join("");
   updatePreview();
 }
 function readForm() {
   return { enabled: $("sEnabled").checked, reps: +$("sReps").value, start_time: $("sStart").value, end_time: $("sEnd").value,
-           interval_min: +$("sInterval").value, days: draftDays, tz: $("sTz").value };
+           interval_min: +$("sInterval").value, days: draftDays, tz: $("sTz").value, lang: $("sLang").value };
 }
 function updatePreview() {
-  const f = readForm();
-  $("enabledHint").textContent = f.enabled ? "Увімкнені" : "На паузі";
+  const f = readForm(), L = T();
+  $("enabledHint").textContent = f.enabled ? L.on : L.off;
   const toMin = (t) => { const [h, m] = (t || "0:0").split(":"); return +h * 60 + +m; };
   const span = toMin(f.end_time) - toMin(f.start_time);
-  if (span < 0 || !f.interval_min) { $("preview").textContent = "Початок має бути раніше за кінець"; return; }
-  const times = Math.floor(span / f.interval_min) + 1, total = times * (f.reps || 0);
-  $("preview").textContent = `${times} ${plural(times, "нагадування", "нагадування", "нагадувань")} на день · ${total} ${plural(total, "віджимання", "віджимання", "віджимань")} · ${f.days.length} ${plural(f.days.length, "день", "дні", "днів")} на тиждень`;
+  if (span < 0 || !f.interval_min) { $("preview").textContent = L.orderErr; return; }
+  const times = Math.floor(span / f.interval_min) + 1;
+  $("preview").textContent = L.preview(times, times * (f.reps || 0), f.days.length);
 }
 $("tab-settings").addEventListener("input", updatePreview);
 $("tab-settings").addEventListener("change", updatePreview);
+$("sLang").addEventListener("change", () => { setLang($("sLang").value); const keep = draftDays; renderSettingsLabels(keep); });
+function renderSettingsLabels(keep) {
+  // re-render day buttons in the new language without losing unsaved choices
+  $("sDays").innerHTML = T().days.map((d, i) => `<button data-d="${i + 1}" class="${keep.includes(String(i + 1)) ? "on" : ""}">${d}</button>`).join("");
+  updatePreview();
+  if (S) { try { renderStats(); renderHistory(); } catch (e) { console.error(e); } }
+}
 document.querySelectorAll("[data-step]").forEach((b) => b.onclick = () => {
   $("sReps").value = Math.max(1, Math.min(1000, (+$("sReps").value || 0) + +b.dataset.step)); haptic("soft"); updatePreview();
 });
@@ -388,14 +469,15 @@ $("sDays").addEventListener("click", (e) => {
 });
 $("saveBtn").onclick = async () => {
   const f = readForm();
-  if (!f.days) return toast("Обери хоча б один день");
+  if (!f.days) return toast(T().pickDay);
   $("saveBtn").disabled = true;
-  try { S = await api("/api/settings", { method: "PUT", body: JSON.stringify(f) }); render(); tg?.HapticFeedback?.notificationOccurred?.("success"); toast("Збережено ✅"); }
+  try { S = await api("/api/settings", { method: "PUT", body: JSON.stringify(f) }); setLang(S.settings.lang); render(); tg?.HapticFeedback?.notificationOccurred?.("success"); toast(T().saved + " ✅"); }
   catch (e) { tg?.HapticFeedback?.notificationOccurred?.("error"); toast(e.message); }
   finally { $("saveBtn").disabled = false; }
 };
 
 /* ---------- start ---------- */
+applyStatic();
 if (!INIT) {
   $("noTg").classList.remove("hidden"); $("tab-stats").classList.add("hidden"); document.querySelector("nav").classList.add("hidden");
 } else {
